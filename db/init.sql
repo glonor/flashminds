@@ -4,8 +4,8 @@ USE flashcard_db;
 
 -- Create a table for users
 CREATE TABLE IF NOT EXISTS users (
-    user_id INT PRIMARY KEY, -- User identifier
-    username VARCHAR(50) NOT NULL, -- User username
+    user_id INT PRIMARY KEY, -- Telegram identifier
+    username VARCHAR(50) NOT NULL, -- Telegram username
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
