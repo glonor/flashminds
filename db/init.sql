@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS flashcards (
     question VARCHAR(255) NOT NULL,
     answer VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (deck_id) REFERENCES decks(deck_id)
+    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE
 );
 
 -- Create a table for study sessions
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS study_sessions (
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (deck_id) REFERENCES decks(deck_id)
+    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
 );
 
 -- Create a table to store flashcard scores in each study session
@@ -45,9 +45,10 @@ CREATE TABLE IF NOT EXISTS flashcard_scores (
     session_id INT,
     card_id INT,
     score INT CHECK (score >= 1 AND score <= 5),
-    FOREIGN KEY (session_id) REFERENCES study_sessions(session_id),
-    FOREIGN KEY (card_id) REFERENCES flashcards(card_id)
+    FOREIGN KEY (session_id) REFERENCES study_sessions(session_id) ON DELETE CASCADE,  -- Add ON DELETE CASCADE
+    FOREIGN KEY (card_id) REFERENCES flashcards(card_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
 );
+
 
 -- Sample data for users
 INSERT INTO users (user_id, user_name) VALUES

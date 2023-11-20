@@ -245,6 +245,83 @@ def get_flashcards():
         connection.close()
 
 
+# Endpoint to remove a flashcard
+@app.route('/remove_flashcard', methods=['DELETE'])
+def remove_flashcard():
+    data = request.get_json()
+    card_id = data.get('card_id')
+
+    if card_id is None:
+        return jsonify({'error': 'card_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the flashcard with the given card_id exists
+        flashcard_check_query = "SELECT * FROM flashcards WHERE card_id = %s"
+        flashcard_check_values = (card_id,)
+        cursor.execute(flashcard_check_query, flashcard_check_values)
+        existing_flashcard = cursor.fetchone()
+
+        if not existing_flashcard:
+            return jsonify({'error': 'Flashcard with the provided card_id does not exist'}), 404
+
+        # Remove the flashcard from the database
+        remove_query = "DELETE FROM flashcards WHERE card_id = %s"
+        remove_values = (card_id,)
+        cursor.execute(remove_query, remove_values)
+        connection.commit()
+
+        return jsonify({'message': 'Flashcard and associated data removed successfully'}), 200
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error removing flashcard: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+
+
+# Endpoint to remove a deck
+@app.route('/remove_deck', methods=['DELETE'])
+def remove_deck():
+    data = request.get_json()
+    deck_id = data.get('deck_id')
+
+    if deck_id is None:
+        return jsonify({'error': 'deck_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the deck with the given deck_id exists
+        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s"
+        deck_check_values = (deck_id,)
+        cursor.execute(deck_check_query, deck_check_values)
+        existing_deck = cursor.fetchone()
+
+        if not existing_deck:
+            return jsonify({'error': 'Deck with the provided deck_id does not exist'}), 404
+
+        # Remove the deck from the database
+        remove_query = "DELETE FROM decks WHERE deck_id = %s"
+        remove_values = (deck_id,)
+        cursor.execute(remove_query, remove_values)
+        connection.commit()
+
+        return jsonify({'message': 'Deck and associated data removed successfully'}), 200
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error removing deck: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
