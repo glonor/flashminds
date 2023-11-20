@@ -1,6 +1,6 @@
 import textwrap
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from user import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from user.ext import ContextTypes
 import requests
 
 #URL for the database
@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     create_user_endpoint = f"{BL_API_BASE_URL}/create_user"
 
     # Check if the user exists
-    check_user_res = requests.get(check_user_endpoint, json={"telegram_id": user.id})
+    check_user_res = requests.get(check_user_endpoint, json={"user_id": user.id})
 
     if check_user_res.status_code == 200:
         welcome_msg = textwrap.dedent(
@@ -22,7 +22,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif check_user_res.status_code == 404:
         # Create the user using the /create_user endpoint
-        create_user_res = requests.post(create_user_endpoint, json={"telegram_id": user.id})
+        create_user_res = requests.post(create_user_endpoint, json={"user_id": user.id})
 
         if create_user_res.status_code == 201:            
             welcome_msg = textwrap.dedent(

@@ -4,8 +4,8 @@ USE flashcard_db;
 
 -- Create a table for users
 CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    telegram_id INT UNIQUE NOT NULL, -- Telegram identifier
+    user_id INT PRIMARY KEY, -- User identifier
+    user_name VARCHAR(50) NOT NULL, -- User username
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -50,16 +50,15 @@ CREATE TABLE IF NOT EXISTS flashcard_scores (
 );
 
 -- Sample data for users
-INSERT INTO users (user_id, telegram_id) VALUES
-    (1, 123456), -- User 1 with Telegram ID 123456
-    (2, 789012), -- User 2 with Telegram ID 789012
-    (3, 345678); -- User 3 with Telegram ID 345678
+INSERT INTO users (user_id, user_name) VALUES
+    (123456, 'john_doe'), -- User 1 with User ID 123456 and username 'john_doe'
+    (789012, 'jane_smith'); -- User 2 with User ID 789012 and username 'jane_smith'
 
 -- Sample data for decks
 INSERT INTO decks (user_id, deck_name) VALUES
-    (1, 'Mathematics'), -- User 1's Mathematics deck
-    (1, 'History'), -- User 1's History deck
-    (2, 'Biology'); -- User 2's Biology deck
+    (123456, 'Mathematics'), -- User 1's Mathematics deck
+    (123456, 'History'), -- User 1's History deck
+    (789012, 'Biology'); -- User 2's Biology deck
 
 -- Sample data for cards
 INSERT INTO flashcards (deck_id, question, answer) VALUES
@@ -69,9 +68,9 @@ INSERT INTO flashcards (deck_id, question, answer) VALUES
 
 -- Sample data for study sessions
 INSERT INTO study_sessions (user_id, deck_id, start_time, end_time) VALUES
-    (1, 1, '2023-01-01 10:00:00', '2023-01-01 11:30:00'), -- User 1 studies Mathematics
-    (1, 2, '2023-01-02 14:00:00', '2023-01-02 15:30:00'), -- User 1 studies History
-    (2, 3, '2023-01-03 09:00:00', '2023-01-03 10:30:00'); -- User 2 studies Biology
+    (123456, 1, '2023-01-01 10:00:00', '2023-01-01 11:30:00'), -- User 1 studies Mathematics
+    (123456, 2, '2023-01-02 14:00:00', '2023-01-02 15:30:00'), -- User 1 studies History
+    (789012, 3, '2023-01-03 09:00:00', '2023-01-03 10:30:00'); -- User 2 studies Biology
 
 -- Sample data for flashcard scores
 INSERT INTO flashcard_scores (session_id, card_id, score) VALUES
