@@ -321,6 +321,125 @@ def remove_deck():
         cursor.close()
         connection.close()
 
+from datetime import datetime
+
+from datetime import datetime
+
+# Endpoint to start a study session
+@app.route('/start_study_session', methods=['POST'])
+def start_study_session():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    deck_id = data.get('deck_id')
+
+    if user_id is None or deck_id is None:
+        return jsonify({'error': 'user_id and deck_id parameters are required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the user and deck exist
+        user_deck_check_query = "SELECT * FROM users WHERE user_id = %s AND EXISTS (SELECT * FROM decks WHERE deck_id = %s)"
+        user_deck_check_values = (user_id, deck_id)
+        cursor.execute(user_deck_check_query, user_deck_check_values)
+        user_deck_exists = cursor.fetchone()
+
+        if not user_deck_exists:
+            return jsonify({'error': 'User or deck does not exist'}), 404
+
+        # Start a new study session
+        start_query = "INSERT INTO study_sessions (user_id, deck_id) VALUES (%s, %s)"
+        start_values = (user_id, deck_id)
+        cursor.execute(start_query, start_values)
+        connection.commit()
+
+        # Get the session_id of the newly started session
+        session_id_query = "SELECT LAST_INSERT_ID() AS session_id"
+        cursor.execute(session_id_query)
+        session_id_result = cursor.fetchone()
+        session_id = session_id_result[0]  # Access the first element of the tuple
+
+
+        return jsonify({'message': 'Study session started successfully', 'session_id': session_id}), 201
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error starting study session: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+# Endpoint to end a study session
+@app.route('/end_study_session', methods=['POST'])
+def end_study_session():
+    data = request.get_json()
+    session_id = data.get('session_id')
+
+    if session_id is None:
+        return jsonify({'error': 'session_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # End the ongoing study session
+        end_query = "UPDATE study_sessions SET end_time = %s WHERE session_id = %s AND end_time IS NULL"
+        end_values = (datetime.now(), session_id)
+        cursor.execute(end_query, end_values)
+        connection.commit()
+
+        return jsonify({'message': 'Study session ended successfully'}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error ending study session: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+# Endpoint to add confidence for a flashcard in a study session
+@app.route('/add_flashcard_confidence', methods=['POST'])
+def add_flashcard_confidence():
+    data = request.get_json()
+    session_id = data.get('session_id')
+    card_id = data.get('card_id')
+    confidence = data.get('confidence')
+
+    if session_id is None or card_id is None or confidence is None or not (1 <= confidence <= 5):
+        return jsonify({'error': 'session_id, card_id, and confidence parameters are required, and confidence must be between 1 and 5'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the session and card exist
+        session_card_check_query = "SELECT * FROM study_sessions WHERE session_id = %s AND end_time IS NULL AND EXISTS (SELECT * FROM flashcards WHERE card_id = %s)"
+        session_card_check_values = (session_id, card_id)
+        cursor.execute(session_card_check_query, session_card_check_values)
+        session_card_exists = cursor.fetchone()
+
+        if not session_card_exists:
+            return jsonify({'error': 'Session is not ongoing or flashcard does not exist'}), 404
+
+        # Add the flashcard confidence to the database
+        add_confidence_query = "INSERT INTO flashcard_confidences (session_id, card_id, confidence) VALUES (%s, %s, %s)"
+        add_confidence_values = (session_id, card_id, confidence)
+        cursor.execute(add_confidence_query, add_confidence_values)
+        connection.commit()
+
+        return jsonify({'message': 'Flashcard confidence added successfully'}), 201
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error adding flashcard confidence: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
 
 
 if __name__ == '__main__':

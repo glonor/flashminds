@@ -39,12 +39,12 @@ CREATE TABLE IF NOT EXISTS study_sessions (
     FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
 );
 
--- Create a table to store flashcard scores in each study session
-CREATE TABLE IF NOT EXISTS flashcard_scores (
-    score_id INT AUTO_INCREMENT PRIMARY KEY,
+-- Create a table to store flashcard confidences in each study session
+CREATE TABLE IF NOT EXISTS flashcard_confidences (
+    confidence_id INT AUTO_INCREMENT PRIMARY KEY,
     session_id INT,
     card_id INT,
-    score INT CHECK (score >= 1 AND score <= 5),
+    confidence INT CHECK (confidence >= 1 AND confidence <= 5),
     FOREIGN KEY (session_id) REFERENCES study_sessions(session_id) ON DELETE CASCADE,  -- Add ON DELETE CASCADE
     FOREIGN KEY (card_id) REFERENCES flashcards(card_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
 );
@@ -73,8 +73,8 @@ INSERT INTO study_sessions (user_id, deck_id, start_time, end_time) VALUES
     (123456, 2, '2023-01-02 14:00:00', '2023-01-02 15:30:00'), -- User 1 studies History
     (789012, 3, '2023-01-03 09:00:00', '2023-01-03 10:30:00'); -- User 2 studies Biology
 
--- Sample data for flashcard scores
-INSERT INTO flashcard_scores (session_id, card_id, score) VALUES
-    (1, 1, 4), -- User 1's Mathematics session, Card 1 scored 4
-    (1, 2, 5); -- User 1's Mathematics session, Card 2 scored 5
+-- Sample data for flashcard confidences
+INSERT INTO flashcard_confidences (session_id, card_id, confidence) VALUES
+    (1, 1, 4), -- User 1's Mathematics session, Card 1 confidenced 4
+    (1, 2, 5); -- User 1's Mathematics session, Card 2 confidenced 5
 
