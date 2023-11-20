@@ -1,5 +1,7 @@
-from flask import Flask, jsonify, request, render_template
+from datetime import datetime
+
 import mysql.connector
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -52,7 +54,7 @@ def check_user():
 def create_user():
     data = request.get_json()
     user_id = data.get('user_id')
-    user_name = data.get('user_name')
+    username = data.get('username')
 
     # Create a database connection and cursor
     connection = create_db_connection()
@@ -60,8 +62,8 @@ def create_user():
 
     try:
         # Insert user data into the database
-        query = "INSERT INTO users (user_id, user_name) VALUES (%s, %s)"
-        values = (user_id, user_name)
+        query = "INSERT INTO users (user_id, username) VALUES (%s, %s)"
+        values = (user_id, username)
         cursor.execute(query, values)
         connection.commit()
         return jsonify({'message': 'User created successfully'}), 201
@@ -111,7 +113,13 @@ def create_deck():
         cursor.execute(insert_query, insert_values)
         connection.commit()
 
-        return jsonify({'message': 'Deck created successfully'}), 201
+        # Get the deck_id of the newly created deck
+        deck_id_query = "SELECT LAST_INSERT_ID() AS deck_id"
+        cursor.execute(deck_id_query)
+        deck_id_result = cursor.fetchone()
+        deck_id = deck_id_result[0]  # Access the first element of the tuple
+
+        return jsonify({'message': 'Deck created successfully', 'deck_id': deck_id}), 201
     except mysql.connector.Error as err:
         return jsonify({'error': f'Error creating deck: {err}'}), 500
     finally:
@@ -184,7 +192,7 @@ def add_flashcard():
             return jsonify({'error': 'User with the provided user_id does not exist'}), 404
 
         # Check if the deck with the given deck_id and associated with the provided user_id exists
-        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s AND user_id = (SELECT user_id FROM users WHERE user_id = %s)"
+        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s AND user_id = %s"
         deck_check_values = (deck_id, user_id)
         cursor.execute(deck_check_query, deck_check_values)
         existing_deck = cursor.fetchone()
@@ -283,7 +291,6 @@ def remove_flashcard():
         connection.close()
 
 
-
 # Endpoint to remove a deck
 @app.route('/remove_deck', methods=['DELETE'])
 def remove_deck():
@@ -321,9 +328,6 @@ def remove_deck():
         cursor.close()
         connection.close()
 
-from datetime import datetime
-
-from datetime import datetime
 
 # Endpoint to start a study session
 @app.route('/start_study_session', methods=['POST'])
@@ -340,14 +344,21 @@ def start_study_session():
     cursor = connection.cursor()
 
     try:
-        # Check if the user and deck exist
-        user_deck_check_query = "SELECT * FROM users WHERE user_id = %s AND EXISTS (SELECT * FROM decks WHERE deck_id = %s)"
-        user_deck_check_values = (user_id, deck_id)
+        # Check if the user and deck exist and if the deck belongs to the user
+        user_deck_check_query = """
+            SELECT * FROM users 
+            WHERE user_id = %s 
+                AND EXISTS (
+                    SELECT * FROM decks 
+                    WHERE deck_id = %s AND user_id = %s
+                )
+        """
+        user_deck_check_values = (user_id, deck_id, user_id)
         cursor.execute(user_deck_check_query, user_deck_check_values)
         user_deck_exists = cursor.fetchone()
 
         if not user_deck_exists:
-            return jsonify({'error': 'User or deck does not exist'}), 404
+            return jsonify({'error': 'User, deck, or deck ownership is invalid'}), 404
 
         # Start a new study session
         start_query = "INSERT INTO study_sessions (user_id, deck_id) VALUES (%s, %s)"
@@ -361,7 +372,6 @@ def start_study_session():
         session_id_result = cursor.fetchone()
         session_id = session_id_result[0]  # Access the first element of the tuple
 
-
         return jsonify({'message': 'Study session started successfully', 'session_id': session_id}), 201
 
     except mysql.connector.Error as err:
@@ -370,6 +380,7 @@ def start_study_session():
         # Close the cursor and the database connection
         cursor.close()
         connection.close()
+
 
 # Endpoint to end a study session
 @app.route('/end_study_session', methods=['POST'])
@@ -385,6 +396,15 @@ def end_study_session():
     cursor = connection.cursor()
 
     try:
+        # Check if the session exists and is ongoing
+        session_check_query = "SELECT * FROM study_sessions WHERE session_id = %s AND end_time IS NULL"
+        session_check_values = (session_id,)
+        cursor.execute(session_check_query, session_check_values)
+        session_exists = cursor.fetchone()
+
+        if not session_exists:
+            return jsonify({'error': 'Session does not exist or is already ended'}), 404
+
         # End the ongoing study session
         end_query = "UPDATE study_sessions SET end_time = %s WHERE session_id = %s AND end_time IS NULL"
         end_values = (datetime.now(), session_id)
@@ -399,6 +419,7 @@ def end_study_session():
         # Close the cursor and the database connection
         cursor.close()
         connection.close()
+
 
 # Endpoint to add confidence for a flashcard in a study session
 @app.route('/add_flashcard_confidence', methods=['POST'])
@@ -439,7 +460,6 @@ def add_flashcard_confidence():
         # Close the cursor and the database connection
         cursor.close()
         connection.close()
-
 
 
 if __name__ == '__main__':

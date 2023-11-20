@@ -5,7 +5,7 @@ USE flashcard_db;
 -- Create a table for users
 CREATE TABLE IF NOT EXISTS users (
     user_id INT PRIMARY KEY, -- User identifier
-    user_name VARCHAR(50) NOT NULL, -- User username
+    username VARCHAR(50) NOT NULL, -- User username
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS flashcard_confidences (
 
 
 -- Sample data for users
-INSERT INTO users (user_id, user_name) VALUES
+INSERT INTO users (user_id, username) VALUES
     (123456, 'john_doe'), -- User 1 with User ID 123456 and username 'john_doe'
     (789012, 'jane_smith'); -- User 2 with User ID 789012 and username 'jane_smith'
 
