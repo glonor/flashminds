@@ -20,7 +20,7 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/mysql
 
-  process_centric:
-    build: ./process_centric
-    depends_on:
-      - business_logic
+  # process_centric:
+  #   build: ./process_centric
+  #   depends_on:
+  #     - business_logic

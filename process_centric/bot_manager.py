@@ -4,25 +4,35 @@ from telegram.ext import ContextTypes
 import requests
 
 #URL for the database
-DATABASE = "http://db:3306"
+BL_API_BASE_URL = "http://localhost:5000"
 
 #Handler /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    res = requests.get(DATABASE + f"/users/{user.id}")
+    check_user_endpoint = f"{BL_API_BASE_URL}/check_user"
+    create_user_endpoint = f"{BL_API_BASE_URL}/create_user"
 
-    #check if the user exists
-    if res.status_code == 200:
+    # Check if the user exists
+    check_user_res = requests.get(check_user_endpoint, json={"telegram_id": user.id})
+
+    if check_user_res.status_code == 200:
         welcome_msg = textwrap.dedent(
-        '''👋 Welcome back {}, good to see you again. Let's start studying together.''').format(user.mention_html())
-        
-    elif res.status_code == 206:
-        welcome_msg = textwrap.dedent(
-        '''👋 Hello {}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions.''').format(user.mention_html())
-        res = requests.post(DATABASE + f"/users", data={"user_id": user.id})
+            f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together.'''
+        )
+
+    elif check_user_res.status_code == 404:
+        # Create the user using the /create_user endpoint
+        create_user_res = requests.post(create_user_endpoint, json={"telegram_id": user.id})
+
+        if create_user_res.status_code == 201:            
+            welcome_msg = textwrap.dedent(
+                f'''👋 Hello {user.mention_html()}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions.'''
+            )
+        else:
+            welcome_msg += f"\nError creating user. Status code: {create_user_res.status_code}"
 
     else:
-        welcome_msg = f"Internal error. Status code: {response.status_code}"
+        welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
 
     await update.message.reply_html(text=welcome_msg)
     

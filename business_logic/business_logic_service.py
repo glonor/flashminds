@@ -18,13 +18,58 @@ db_config = {
 def create_db_connection():
     return mysql.connector.connect(**db_config)
 
+# Endpoint to check if user is present in the database
+@app.route('/check_user', methods=['GET'])
+def check_user():
+    data = request.get_json()
+    telegram_id = data.get('telegram_id')
 
-@app.route('/')
-def index():
-    """
-    This route provides a welcome message when accessing the root URL.
-    """
-    return jsonify({'message': 'Welcome to the FlashMinds API'})
+    if telegram_id is None:
+        return jsonify({'error': 'telegram_id parameter is missing'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # Check if the telegram_id is present in the database
+        cursor.execute('SELECT * FROM users WHERE telegram_id = %s', (telegram_id,))
+        result = cursor.fetchone()
+
+        if result:
+            return jsonify({'message': 'User found'}), 200
+        else:
+            return jsonify({'message': 'User not found'}), 404
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error checking user: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+# Endpoint to create a new user
+@app.route('/create_user', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    telegram_id = data.get('telegram_id')
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Insert user data into the database
+        query = "INSERT INTO users (telegram_id) VALUES (%s)"
+        values = (telegram_id,)
+        cursor.execute(query, values)
+        connection.commit()
+        return jsonify({'message': 'User created successfully'}), 201
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error creating user: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
 
 
 @app.route('/add_flashcard', methods=['POST'])
@@ -34,8 +79,8 @@ def add_flashcard():
     It retrieves the form data, validates it, and inserts the flashcard data into the database.
     """
     # Get form data
-    front_content = request.form['front_content']
-    back_content = request.form['back_content']
+    question = request.form['question']
+    answer = request.form['answer']
 
     # Create a database connection and cursor
     connection = create_db_connection()
@@ -43,8 +88,8 @@ def add_flashcard():
 
     try:
         # Insert flashcard data into the database
-        query = "INSERT INTO flashcards (front_content, back_content) VALUES (%s, %s)"
-        values = (front_content, back_content)
+        query = "INSERT INTO flashcards (question, answer) VALUES (%s, %s)"
+        values = (question, answer)
         cursor.execute(query, values)
         connection.commit()
         return jsonify({'message': 'Flashcard added successfully'})
@@ -68,7 +113,7 @@ def get_flashcard_data():
 
     try:
         # SQL query to retrieve flashcard data
-        cursor.execute('SELECT front_content, back_content FROM flashcards')
+        cursor.execute('SELECT question, answer FROM flashcards')
         results = cursor.fetchall()
         return jsonify({'flashcard_data': results})
     except mysql.connector.Error as err:
