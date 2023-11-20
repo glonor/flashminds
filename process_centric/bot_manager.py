@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 import requests
 
 #URL for the database
-DATABASE = "http://127.0.0.1:8000"
+DATABASE = "http://db:3306"
 
 #Handler /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
