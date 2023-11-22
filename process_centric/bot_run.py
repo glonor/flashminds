@@ -13,7 +13,7 @@ import logging
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
-from bot_manager import help, start, unknown, details, button
+from bot_manager import help, start, unknown
 
 #Load environment variables from the .env file
 load_dotenv()

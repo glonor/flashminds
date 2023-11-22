@@ -12,29 +12,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     check_user_endpoint = f"{BL_API_BASE_URL}/check_user"
     create_user_endpoint = f"{BL_API_BASE_URL}/create_user"
 
-    # Check if the user exists
+    #Check if the user exists
     check_user_res = requests.get(check_user_endpoint, json={"user_id": user.id})
+    welcome_msg=""
 
-    if check_user_res.status_code == 200:
-        welcome_msg = textwrap.dedent(
-            f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together.'''
-        )
-
-    elif check_user_res.status_code == 404:
-        # Create the user using the /create_user endpoint
+    if check_user_res.status_code == 404: #user not found
+        #Create the user using the /create_user endpoint
         create_user_res = requests.post(create_user_endpoint, json={"user_id": user.id, "username": user.username})
 
-        if create_user_res.status_code == 201:            
+        if create_user_res.status_code == 201:  #creation done          
             welcome_msg = textwrap.dedent(
                 f'''👋 Hello {user.mention_html()}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions.'''
             )
-        else:
+        else: #error
             welcome_msg += f"\nError creating user. Status code: {create_user_res.status_code}"
 
-    else:
+    elif check_user_res.status_code == 200: #user already exist
+        welcome_msg = textwrap.dedent(f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together.''')
+
+    else: #error
         welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
 
-    await update.message.reply_html(text=welcome_msg)
+    await update.message.reply_html(text=welcome_msg) 
     
 
 #Handler /help command
