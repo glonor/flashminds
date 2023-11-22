@@ -252,6 +252,76 @@ def get_flashcards():
         cursor.close()
         connection.close()
 
+def retrieve_flashcards(flashcards, n):
+    now = datetime.now()
+
+    def custom_sort(card):
+        confidence_weight = 0.7
+        recency_weight = 0.3
+
+        # Map the confidence score to a scale between 0 and 1
+        confidence_score = (card['confidence'] - 1) / 4.0
+
+        # Use the creation timestamp as the default value if last_reviewed is not available
+        last_reviewed = card.get('last_reviewed', 'created_at')
+
+        # Calculate the time difference in seconds
+        time_difference_seconds = (now - last_reviewed).total_seconds()
+
+        # Weighted combination of confidence and recency
+        weighted_score = confidence_weight * confidence_score + recency_weight / (time_difference_seconds + 1)
+
+        card['weighted_score'] = weighted_score  # Include the weighted_score in the flashcard dictionary
+        return weighted_score
+
+    sorted_flashcards = sorted(flashcards, key=custom_sort, reverse=False)
+
+    # Retrieve the top N flashcards
+    selected_flashcards = sorted_flashcards[:n]
+
+    return selected_flashcards
+
+# Endpoint to get flashcards for a specific deck using weighted sorting
+@app.route('/get_weighted_flashcards', methods=['GET'])
+def get_weighted_flashcards():
+    data = request.get_json()
+    deck_id = data.get('deck_id')
+
+    if deck_id is None:
+        return jsonify({'error': 'deck_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # Check if the deck exists
+        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s"
+        deck_check_values = (deck_id,)
+        cursor.execute(deck_check_query, deck_check_values)
+        existing_deck = cursor.fetchone()
+
+        if not existing_deck:
+            return jsonify({'error': 'Deck with the provided deck_id does not exist'}), 404
+
+        # Retrieve flashcards with confidence scores for the specified deck
+        flashcards_query = "SELECT * FROM flashcards WHERE deck_id = %s"
+        flashcards_values = (deck_id,)
+        cursor.execute(flashcards_query, flashcards_values)
+        flashcards = cursor.fetchall()
+
+        # Use the weighted sorting algorithm to prioritize flashcards
+        n = len(flashcards)  # Use all available flashcards
+        sorted_flashcards = retrieve_flashcards(flashcards, n)
+
+        return jsonify({'weighted_flashcards': sorted_flashcards}), 200
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error retrieving flashcards: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
 
 # Endpoint to remove a flashcard
 @app.route('/remove_flashcard', methods=['DELETE'])
@@ -387,9 +457,10 @@ def start_study_session():
 def end_study_session():
     data = request.get_json()
     session_id = data.get('session_id')
+    average_confidence = data.get('average_confidence')
 
-    if session_id is None:
-        return jsonify({'error': 'session_id parameter is required'}), 400
+    if session_id is None or average_confidence is None:
+        return jsonify({'error': 'session_id parameter is required and average_confidence must be between 1 and 5'}), 400
 
     # Create a database connection and cursor
     connection = create_db_connection()
@@ -405,9 +476,9 @@ def end_study_session():
         if not session_exists:
             return jsonify({'error': 'Session does not exist or is already ended'}), 404
 
-        # End the ongoing study session
-        end_query = "UPDATE study_sessions SET end_time = %s WHERE session_id = %s AND end_time IS NULL"
-        end_values = (datetime.now(), session_id)
+        # End the ongoing study session with the calculated average confidence
+        end_query = "UPDATE study_sessions SET end_time = %s, average_confidence = %s WHERE session_id = %s AND end_time IS NULL"
+        end_values = (datetime.now(), average_confidence, session_id)
         cursor.execute(end_query, end_values)
         connection.commit()
 
@@ -425,30 +496,29 @@ def end_study_session():
 @app.route('/add_flashcard_confidence', methods=['POST'])
 def add_flashcard_confidence():
     data = request.get_json()
-    session_id = data.get('session_id')
     card_id = data.get('card_id')
     confidence = data.get('confidence')
 
-    if session_id is None or card_id is None or confidence is None or not (1 <= confidence <= 5):
-        return jsonify({'error': 'session_id, card_id, and confidence parameters are required, and confidence must be between 1 and 5'}), 400
+    if card_id is None or confidence is None or not (1 <= confidence <= 5):
+        return jsonify({'error': 'card_id and confidence parameters are required, and confidence must be between 1 and 5'}), 400
 
     # Create a database connection and cursor
     connection = create_db_connection()
     cursor = connection.cursor()
 
     try:
-        # Check if the session and card exist
-        session_card_check_query = "SELECT * FROM study_sessions WHERE session_id = %s AND end_time IS NULL AND EXISTS (SELECT * FROM flashcards WHERE card_id = %s)"
-        session_card_check_values = (session_id, card_id)
-        cursor.execute(session_card_check_query, session_card_check_values)
-        session_card_exists = cursor.fetchone()
+        # Check if the card exists
+        card_check_query = "SELECT * FROM flashcards WHERE card_id = %s"
+        card_check_values = (card_id,)
+        cursor.execute(card_check_query, card_check_values)
+        card_exists = cursor.fetchone()
 
-        if not session_card_exists:
-            return jsonify({'error': 'Session is not ongoing or flashcard does not exist'}), 404
+        if not card_exists:
+            return jsonify({'error': 'Flashcard does not exist'}), 404
 
         # Add the flashcard confidence to the database
-        add_confidence_query = "INSERT INTO flashcard_confidences (session_id, card_id, confidence) VALUES (%s, %s, %s)"
-        add_confidence_values = (session_id, card_id, confidence)
+        add_confidence_query = "UPDATE flashcards SET confidence = %s WHERE card_id = %s"
+        add_confidence_values = (confidence, card_id)
         cursor.execute(add_confidence_query, add_confidence_values)
         connection.commit()
 
