@@ -33,7 +33,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: #error
         welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
 
-    await update.message.reply_html(text=welcome_msg) 
+    await update.message.reply_html(text=welcome_msg) #send message
     
 
 #Handler /help command
