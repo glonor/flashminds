@@ -74,6 +74,42 @@ def create_user():
         cursor.close()
         connection.close()
 
+# Endpoint to delete a user via JSON
+@app.route('/delete_user', methods=['DELETE'])
+def delete_user():
+    data = request.get_json()
+    user_id = data.get('user_id')
+
+    if user_id is None:
+        return jsonify({'error': 'Missing user_id in the request body'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the user exists
+        check_query = "SELECT * FROM users WHERE user_id = %s"
+        cursor.execute(check_query, (user_id,))
+        user = cursor.fetchone()
+
+        if user is None:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Delete the user from the database
+        delete_query = "DELETE FROM users WHERE user_id = %s"
+        cursor.execute(delete_query, (user_id,))
+        connection.commit()
+
+        return jsonify({'message': 'User deleted successfully'}), 200
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error deleting user: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+
 # Endpoint to create a new deck for a user
 @app.route('/create_deck', methods=['POST'])
 def create_deck():
@@ -151,10 +187,13 @@ def get_decks():
             return jsonify({'error': 'User with the provided user_id does not exist'}), 404
 
         # Retrieve decks for the specified user
-        decks_query = "SELECT * FROM decks WHERE user_id = (SELECT user_id FROM users WHERE user_id = %s)"
+        decks_query = "SELECT * FROM decks WHERE user_id = %s"
         decks_values = (user_id,)
         cursor.execute(decks_query, decks_values)
         decks = cursor.fetchall()
+
+        if not decks:
+            return jsonify({'message': 'No decks found for the specified user'}), 404
 
         return jsonify({'decks': decks}), 200
     except mysql.connector.Error as err:
@@ -245,76 +284,6 @@ def get_flashcards():
         flashcards = cursor.fetchall()
 
         return jsonify({'flashcards': flashcards}), 200
-    except mysql.connector.Error as err:
-        return jsonify({'error': f'Error retrieving flashcards: {err}'}), 500
-    finally:
-        # Close the cursor and the database connection
-        cursor.close()
-        connection.close()
-
-def retrieve_flashcards(flashcards, n):
-    now = datetime.now()
-
-    def custom_sort(card):
-        confidence_weight = 0.7
-        recency_weight = 0.3
-
-        # Map the confidence score to a scale between 0 and 1
-        confidence_score = (card['confidence'] - 1) / 4.0
-
-        # Use the creation timestamp as the default value if last_reviewed is not available
-        last_reviewed = card.get('last_reviewed', 'created_at')
-
-        # Calculate the time difference in seconds
-        time_difference_seconds = (now - last_reviewed).total_seconds()
-
-        # Weighted combination of confidence and recency
-        weighted_score = confidence_weight * confidence_score + recency_weight / (time_difference_seconds + 1)
-
-        card['weighted_score'] = weighted_score  # Include the weighted_score in the flashcard dictionary
-        return weighted_score
-
-    sorted_flashcards = sorted(flashcards, key=custom_sort, reverse=False)
-
-    # Retrieve the top N flashcards
-    selected_flashcards = sorted_flashcards[:n]
-
-    return selected_flashcards
-
-# Endpoint to get flashcards for a specific deck using weighted sorting
-@app.route('/get_weighted_flashcards', methods=['GET'])
-def get_weighted_flashcards():
-    data = request.get_json()
-    deck_id = data.get('deck_id')
-
-    if deck_id is None:
-        return jsonify({'error': 'deck_id parameter is required'}), 400
-
-    # Create a database connection and cursor
-    connection = create_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    try:
-        # Check if the deck exists
-        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s"
-        deck_check_values = (deck_id,)
-        cursor.execute(deck_check_query, deck_check_values)
-        existing_deck = cursor.fetchone()
-
-        if not existing_deck:
-            return jsonify({'error': 'Deck with the provided deck_id does not exist'}), 404
-
-        # Retrieve flashcards with confidence scores for the specified deck
-        flashcards_query = "SELECT * FROM flashcards WHERE deck_id = %s"
-        flashcards_values = (deck_id,)
-        cursor.execute(flashcards_query, flashcards_values)
-        flashcards = cursor.fetchall()
-
-        # Use the weighted sorting algorithm to prioritize flashcards
-        n = len(flashcards)  # Use all available flashcards
-        sorted_flashcards = retrieve_flashcards(flashcards, n)
-
-        return jsonify({'weighted_flashcards': sorted_flashcards}), 200
     except mysql.connector.Error as err:
         return jsonify({'error': f'Error retrieving flashcards: {err}'}), 500
     finally:
