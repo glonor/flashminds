@@ -8,7 +8,7 @@ BL_API_BASE_URL = "http://localhost:5000"
 
 #Handler /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+    user = update.effective_user #telegram account data
     check_user_endpoint = f"{BL_API_BASE_URL}/check_user"
     create_user_endpoint = f"{BL_API_BASE_URL}/create_user"
 
@@ -18,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if check_user_res.status_code == 404: #user not found
         #Create the user using the /create_user endpoint
-        create_user_res = requests.post(create_user_endpoint, json={"user_id": user.id, "username": user.username})
+        create_user_res = requests.post(create_user_endpoint, json={"user_id": int(user.id), "username": str(user.full_name)})
 
         if create_user_res.status_code == 201:  #creation done          
             welcome_msg = textwrap.dedent(
@@ -33,14 +33,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: #error
         welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
 
-    await update.message.reply_html(text=welcome_msg) #send message write from main
-    
+    await update.message.reply_html(text=welcome_msg)
 
 #Handler /help command
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_msg=textwrap.dedent('''
         🆘 <b>Do you need help?</b> Here is a list of commands for you:
-
+            /add - add new deck
         ❓ <b>More doubts?</b>
         Contact us on Github: [link]
     ''')
