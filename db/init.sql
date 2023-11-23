@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS decks (
     user_id INT,
     deck_name VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Create a table for flashcards
