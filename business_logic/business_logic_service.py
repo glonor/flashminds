@@ -492,15 +492,56 @@ def end_study_session():
         connection.close()
 
 
-# Endpoint to add confidence for a flashcard in a study session
-@app.route('/add_flashcard_confidence', methods=['POST'])
-def add_flashcard_confidence():
+from flask import abort
+
+# Endpoint to check if a flashcard has been reviewed at least once
+@app.route('/get_flashcard_model', methods=['GET'])
+def get_flashcard():
     data = request.get_json()
     card_id = data.get('card_id')
-    confidence = data.get('confidence')
 
-    if card_id is None or confidence is None or not (1 <= confidence <= 5):
-        return jsonify({'error': 'card_id and confidence parameters are required, and confidence must be between 1 and 5'}), 400
+    if card_id is None:
+        return jsonify({'error': 'card_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the flashcard exists
+        card_check_query = "SELECT * FROM flashcards WHERE card_id = %s"
+        card_check_values = (card_id,)
+        cursor.execute(card_check_query, card_check_values)
+        flashcard = cursor.fetchone()
+        flashcard = dict(zip(cursor.column_names, flashcard))
+
+        if flashcard is not None:
+            # Check if the flashcard has been reviewed at least once
+            if flashcard['ebisu_model'] is not None:
+                return jsonify({'model': flashcard['ebisu_model'], 'last_reviewed': flashcard['last_reviewed']}), 200
+            else:
+                return jsonify({'message': 'Flashcard has not been reviewed yet'}), 204
+        else:
+            return jsonify({'message': 'Flashcard does not exist'}), 404
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error checking flashcard review status: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
+
+# Endpoint to update a flashcard, e.g., during a study session
+@app.route('/update_flashcard', methods=['POST'])
+def update_flashcard():
+    data = request.get_json()
+    card_id = data.get('card_id')
+    ebisu_model = data.get('ebisu_model')
+    last_reviewed = data.get('last_reviewed')
+
+    if card_id is None or ebisu_model is None:
+        return jsonify({'error': 'card_id and model parameters are required'}), 400
 
     # Create a database connection and cursor
     connection = create_db_connection()
@@ -516,16 +557,16 @@ def add_flashcard_confidence():
         if not card_exists:
             return jsonify({'error': 'Flashcard does not exist'}), 404
 
-        # Add the flashcard confidence to the database
-        add_confidence_query = "UPDATE flashcards SET confidence = %s WHERE card_id = %s"
-        add_confidence_values = (confidence, card_id)
-        cursor.execute(add_confidence_query, add_confidence_values)
+        # Update the flashcard with the new model and last_reviewed timestamp
+        update_flashcard_query = "UPDATE flashcards SET ebisu_model = %s, last_reviewed = %s WHERE card_id = %s"
+        update_flashcard_values = (ebisu_model, last_reviewed, card_id)
+        cursor.execute(update_flashcard_query, update_flashcard_values)
         connection.commit()
 
-        return jsonify({'message': 'Flashcard confidence added successfully'}), 201
+        return jsonify({'message': 'Flashcard updated successfully'}), 200
 
     except mysql.connector.Error as err:
-        return jsonify({'error': f'Error adding flashcard confidence: {err}'}), 500
+        return jsonify({'error': f'Error updating flashcard: {err}'}), 500
     finally:
         # Close the cursor and the database connection
         cursor.close()

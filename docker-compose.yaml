@@ -1,6 +1,17 @@
 version: "3"
 
 services:
+  ebisu:
+    build: ./ebisu
+    links:
+      - db
+      - business_logic
+    ports:
+      - "5001:5000"
+    depends_on:
+      - db
+      - business_logic
+
   business_logic:
     build: ./business_logic
     links:
