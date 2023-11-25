@@ -68,7 +68,62 @@ def review_flashcard():
 
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
+
+
+# Endpoint to get the next flashcard to review during a study session
+@app.route('/get_next_flashcard', methods=['GET'])
+def get_next_flashcard():
+    data = request.get_json()
+    session_id = data.get('session_id')
+
+    if session_id is None:
+        return jsonify({'error': 'session_id parameter is required'}), 400
     
+    # Check if session exists and is ongoing
+    try:
+        get_session_endpoint = f'{BL_API_BASE_URL}/check_study_session'
+        response = requests.get(get_session_endpoint, json={'session_id': session_id})
+    except requests.RequestException as e:
+        return jsonify({'error': f'Error making request to remote server: {e}'}), 500
+
+    if response.status_code == 200:
+        deck_id = response.json().get('deck_id')  # Get the deck_id from the response
+    elif response.status_code == 404:
+        return jsonify({f'error': {response.json().get('message')}}), 404
+
+    # Get all flashcards in the deck
+    try:
+        get_deck_endpoint = f'{BL_API_BASE_URL}/get_flashcards'
+        response = requests.get(get_deck_endpoint, json={'deck_id': deck_id})
+    except requests.RequestException as e:
+        return jsonify({'error': f'Error making request to remote server: {e}'}), 500
+
+    if response.status_code == 200:
+        flashcards = response.json().get('flashcards')
+    elif response.status_code == 404:
+        return jsonify({f'error': {response.json().get('message')}}), 404
+    
+    # Get the model for each flashcard
+    for f in flashcards:
+        if f['ebisu_model'] is None:
+            f['recall_probability'] = 0
+        else:
+            f_model = json.loads(f['ebisu_model'])
+            f_model = [ebisu.Atom.from_dict(atom_data) for atom_data in f_model]
+            last_reviewed = f['last_reviewed']
+            elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
+            f['recall_probability'] = ebisu.predictRecall(f_model, elapsed_time)
+    
+    # Sort the flashcards by recall_probability
+    flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
+
+    # Return the flashcard with the lowest recall_probability
+    return jsonify(flashcards[0]), 200
+    # return jsonify({
+    #     'question': flashcards[0]['question'],
+    #     'answer': flashcards[0]['answer'],
+    #     'card_id': flashcards[0]['card_id']
+    # }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

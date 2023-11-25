@@ -451,6 +451,38 @@ def start_study_session():
         cursor.close()
         connection.close()
 
+# Endpoint to check if a study session is ongoing and return the deck_id
+@app.route('/check_study_session', methods=['GET'])
+def check_study_session():
+    data = request.get_json()
+    session_id = data.get('session_id')
+
+    if session_id is None:
+        return jsonify({'error': 'session_id parameter is required'}), 400
+
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if the session exists and is ongoing
+        session_check_query = "SELECT deck_id FROM study_sessions WHERE session_id = %s AND end_time IS NULL"
+        session_check_values = (session_id,)
+        cursor.execute(session_check_query, session_check_values)
+        deck_id = cursor.fetchone()
+
+        if deck_id:
+            return jsonify({'message': 'Study session is ongoing', 'deck_id': deck_id[0]}), 200
+        else:
+            return jsonify({'message': 'Study session does not exist or is already ended'}), 404
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error checking study session: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
 
 # Endpoint to end a study session
 @app.route('/end_study_session', methods=['POST'])
