@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS study_sessions (
     session_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     deck_id INT,
-    average_confidence FLOAT CHECK (average_confidence >= 1 AND average_confidence <= 5),
+    average_confidence FLOAT,
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),

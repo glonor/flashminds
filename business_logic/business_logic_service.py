@@ -252,76 +252,6 @@ def get_flashcards():
         cursor.close()
         connection.close()
 
-def retrieve_flashcards(flashcards, n):
-    now = datetime.now()
-
-    def custom_sort(card):
-        confidence_weight = 0.7
-        recency_weight = 0.3
-
-        # Map the confidence score to a scale between 0 and 1
-        confidence_score = (card['confidence'] - 1) / 4.0
-
-        # Use the creation timestamp as the default value if last_reviewed is not available
-        last_reviewed = card.get('last_reviewed', 'created_at')
-
-        # Calculate the time difference in seconds
-        time_difference_seconds = (now - last_reviewed).total_seconds()
-
-        # Weighted combination of confidence and recency
-        weighted_score = confidence_weight * confidence_score + recency_weight / (time_difference_seconds + 1)
-
-        card['weighted_score'] = weighted_score  # Include the weighted_score in the flashcard dictionary
-        return weighted_score
-
-    sorted_flashcards = sorted(flashcards, key=custom_sort, reverse=False)
-
-    # Retrieve the top N flashcards
-    selected_flashcards = sorted_flashcards[:n]
-
-    return selected_flashcards
-
-# Endpoint to get flashcards for a specific deck using weighted sorting
-@app.route('/get_weighted_flashcards', methods=['GET'])
-def get_weighted_flashcards():
-    data = request.get_json()
-    deck_id = data.get('deck_id')
-
-    if deck_id is None:
-        return jsonify({'error': 'deck_id parameter is required'}), 400
-
-    # Create a database connection and cursor
-    connection = create_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    try:
-        # Check if the deck exists
-        deck_check_query = "SELECT * FROM decks WHERE deck_id = %s"
-        deck_check_values = (deck_id,)
-        cursor.execute(deck_check_query, deck_check_values)
-        existing_deck = cursor.fetchone()
-
-        if not existing_deck:
-            return jsonify({'error': 'Deck with the provided deck_id does not exist'}), 404
-
-        # Retrieve flashcards with confidence scores for the specified deck
-        flashcards_query = "SELECT * FROM flashcards WHERE deck_id = %s"
-        flashcards_values = (deck_id,)
-        cursor.execute(flashcards_query, flashcards_values)
-        flashcards = cursor.fetchall()
-
-        # Use the weighted sorting algorithm to prioritize flashcards
-        n = len(flashcards)  # Use all available flashcards
-        sorted_flashcards = retrieve_flashcards(flashcards, n)
-
-        return jsonify({'weighted_flashcards': sorted_flashcards}), 200
-    except mysql.connector.Error as err:
-        return jsonify({'error': f'Error retrieving flashcards: {err}'}), 500
-    finally:
-        # Close the cursor and the database connection
-        cursor.close()
-        connection.close()
-
 
 # Endpoint to remove a flashcard
 @app.route('/remove_flashcard', methods=['DELETE'])
@@ -483,16 +413,56 @@ def check_study_session():
         cursor.close()
         connection.close()
 
+# Endpoint to update session statistics
+@app.route('/update_session_statistics', methods=['POST'])
+def update_session_statistics():
+    data = request.get_json()
+    session_id = data.get('session_id')
+    confidence = data.get('confidence')
+
+    if session_id is None or confidence is None:
+        return jsonify({'error': 'session_id and confidence parameters are required'}), 400
+    
+    # Create a database connection and cursor
+    connection = create_db_connection()
+    cursor = connection.cursor()
+
+    # Get current average confidence
+    try:
+        session_statistics_query = "SELECT average_confidence FROM study_sessions WHERE session_id = %s"
+        session_statistics_values = (session_id,)
+        cursor.execute(session_statistics_query, session_statistics_values)
+        average_confidence = cursor.fetchone()[0]
+
+        # Calculate the new average confidence
+        if average_confidence is None:
+            new_average_confidence = confidence
+        else:
+            new_average_confidence = (average_confidence + confidence) / 2
+    
+        # Update the session statistics
+        update_query = "UPDATE study_sessions SET average_confidence = %s WHERE session_id = %s"
+        update_values = (new_average_confidence, session_id)
+        cursor.execute(update_query, update_values)
+        connection.commit()
+
+        return jsonify({'message': 'Session statistics updated successfully'}), 200
+    except mysql.connector.Error as err:
+        return jsonify({'error': f'Error checking study session: {err}'}), 500
+    finally:
+        # Close the cursor and the database connection
+        cursor.close()
+        connection.close()
+
 
 # Endpoint to end a study session
 @app.route('/end_study_session', methods=['POST'])
 def end_study_session():
     data = request.get_json()
     session_id = data.get('session_id')
-    average_confidence = data.get('average_confidence')
 
-    if session_id is None or average_confidence is None:
-        return jsonify({'error': 'session_id parameter is required and average_confidence must be between 1 and 5'}), 400
+    if session_id is None:
+        return jsonify({'error': 'session_id parameter is required'}), 400
 
     # Create a database connection and cursor
     connection = create_db_connection()
@@ -507,14 +477,17 @@ def end_study_session():
 
         if not session_exists:
             return jsonify({'error': 'Session does not exist or is already ended'}), 404
+        
+        session = dict(zip(cursor.column_names, session_exists))
+        session_average_confidence = session['average_confidence']
 
         # End the ongoing study session with the calculated average confidence
-        end_query = "UPDATE study_sessions SET end_time = %s, average_confidence = %s WHERE session_id = %s AND end_time IS NULL"
-        end_values = (datetime.now(), average_confidence, session_id)
+        end_query = "UPDATE study_sessions SET end_time = %s  WHERE session_id = %s"
+        end_values = (datetime.now(), session_id)
         cursor.execute(end_query, end_values)
         connection.commit()
 
-        return jsonify({'message': 'Study session ended successfully'}), 200
+        return jsonify({'message': 'Study session ended successfully', 'avarage_confidence': session_average_confidence}), 200
 
     except mysql.connector.Error as err:
         return jsonify({'error': f'Error ending study session: {err}'}), 500
@@ -523,8 +496,6 @@ def end_study_session():
         cursor.close()
         connection.close()
 
-
-from flask import abort
 
 # Endpoint to check if a flashcard has been reviewed at least once
 @app.route('/get_flashcard_model', methods=['GET'])
