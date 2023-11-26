@@ -22,13 +22,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if create_user_res.status_code == 201:  #creation done          
             welcome_msg = textwrap.dedent(
-                f'''👋 Hello {user.mention_html()}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions.'''
+                f'''👋 Hello {user.mention_html()}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions'''
             )
         else: #error
             welcome_msg += f"\nError creating user. Status code: {create_user_res.status_code}"
 
     elif check_user_res.status_code == 200: #user already exist
-        welcome_msg = textwrap.dedent(f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together.''')
+        welcome_msg = textwrap.dedent(f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together''')
 
     else: #error
         welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
@@ -38,9 +38,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 #Handler /help command
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_msg=textwrap.dedent('''
-        🆘 <b>Do you need help?</b> Here is a list of commands for you:
-            /add - add new deck
-        ❓ <b>More doubts?</b>
+        🆘 <b>Do you need help?</b> 
+        
+        Here, a list for you:
+        - /add | new deck
+
+        <b>More doubts?</b>
         Contact us on Github: [link]
     ''')
     await update.message.reply_html(text=help_msg)

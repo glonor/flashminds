@@ -13,21 +13,17 @@ import logging, requests, textwrap
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
-from bot_manager import help, start, unknown
-from deck_manager import cancel, button_click, write_answer, write_question, set_deck_name, add, decks
+from cmd_manager import help, start, unknown
+from deck_manager import cancel, add_another, set_answer, set_question, set_deck_name, add
 
-CHOOSING, MENU, QUESTION, ANSWER = range(4)
+DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
 
 #Load environment variables from the .env file
 load_dotenv()
 
 #Logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG
-)
-
-logging.getLogger('telegram.ext.conversationhandler').setLevel(logging.DEBUG)
-#logging.getLogger("httpx").setLevel(logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.INFO) #Levels: CRITICAL, ERROR, WARNING, INFO
 logger = logging.getLogger(__name__)
     
 def main():
@@ -39,27 +35,25 @@ def main():
     #Create the Application and pass it bot's token.
     bot = Application.builder().token(TELEGRAM_API_TOKEN).build()
 
-
+    #Set structure conversation handler /add command
     conversation_handler = ConversationHandler(
         entry_points=[CommandHandler('add', add)],
         states={
-            CHOOSING: [MessageHandler(filters.TEXT, set_deck_name)],
-            QUESTION: [MessageHandler(filters.TEXT, write_question)],
-            ANSWER: [MessageHandler(filters.TEXT, write_answer)]
+            DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
+            QUESTION: [MessageHandler(filters.TEXT, set_question)],
+            ANSWER: [MessageHandler(filters.TEXT, set_answer)],
+            ADD_ANOTHER: [CallbackQueryHandler(add_another, pattern='^(yes|no)$')]
+
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
 
-
     #Set commands handler
-    bot.add_handler(conversation_handler)
     bot.add_handler(CommandHandler('help', help))
     bot.add_handler(CommandHandler('start', start))
+    bot.add_handler(conversation_handler)
     bot.add_handler(MessageHandler(filters.COMMAND, unknown))
-
-    #Set button handler
-    bot.add_handler(CallbackQueryHandler(button_click))
 
     #Run the bot until the user presses Ctrl-C
     bot.run_polling(allowed_updates=Update.ALL_TYPES)
