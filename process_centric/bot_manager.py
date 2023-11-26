@@ -22,13 +22,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if create_user_res.status_code == 201:  #creation done          
             welcome_msg = textwrap.dedent(
-                f'''👋 Hello {user.mention_html()}, I am <b>FlashMindsBot</b>, I will be your support during the study sessions'''
+                f'''
+                🚀 Hello {user.mention_html()}, Welcome to <b>FlashMinds</b>! 🧠
+                Elevate your learning where smart flashcards meet AI magic! 📚✨
+
+                🌟 Key Features:
+
+                1️⃣ Smart Flashcards: Adaptive learning for your progress.
+                2️⃣ Dynamic Wording: Varied concepts for deep understanding.
+                3️⃣ Telegram Access: Study seamlessly via our intuitive bot.
+                '''
             )
         else: #error
             welcome_msg += f"\nError creating user. Status code: {create_user_res.status_code}"
 
     elif check_user_res.status_code == 200: #user already exist
-        welcome_msg = textwrap.dedent(f'''👋 Welcome back {user.mention_html()}, good to see you again. Let's start studying together''')
+        welcome_msg = textwrap.dedent(
+            f'''
+            🌟 Welcome back {user.mention_html()}! 🚀
+
+            Embark on another session of enhanced learning with FlashMinds. 🧠✨ We're thrilled to have you back!
+            '''
+        )
 
     else: #error
         welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
