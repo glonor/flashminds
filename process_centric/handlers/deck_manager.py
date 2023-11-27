@@ -1,7 +1,10 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler
 from telegram.ext import ContextTypes
 import requests, textwrap
+
+from handlers.bot_manager import *
+
 
 DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
 escape = False
@@ -18,6 +21,7 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #1 ---- set deck 
 async def set_deck_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("ciao")
     create_deck_endpoint = f"{BL_API_BASE_URL}/create_deck"
 
     user = update.effective_user #telegram user
@@ -107,18 +111,16 @@ async def add_another(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.callback_query.message.edit_text(result_message)
         context.user_data.clear()
         return ConversationHandler.END #loop exit
+        
 
 #5 ---- cancel 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     
-    await update.message.reply_text("🛑 You cancelled the deck creation.")
+    msg="🛑 You cancelled the deck creation."
     context.user_data.clear()
+    await show_keyboard(update, context, msg)
     return ConversationHandler.END
-
-# ---------------------------------------------------------------- #
-# ------------------  end HANDLER /ADD COMMAND  ------------------ #
-# ---------------------------------------------------------------- #
 
 # ---------------------------------------------------------------- #
 # ------------------ start HANDLER /REMOVE COMMAND --------------- #
@@ -137,8 +139,8 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
         decks = response_data.get('decks', [])
 
         if not decks: #empty list
-            await update.message.reply_html(text="👀 No decks are present. You can create one with the command /add ")
-
+            msg="👀 No decks are present. You can create one with the command /add"
+            await show_keyboard(update, context, msg)
         else:
             keyboard=[]
 
@@ -150,6 +152,7 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.message.reply_text("🗑️ Choose the deck you want to remove", reply_markup=reply_markup)
+            
 
     else:  #error
         msg = f"Internal error. Status code: {create_deck_res.status_code}"
@@ -173,7 +176,7 @@ async def remove_deck(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.callback_query.message.edit_text(f"Internal error. Status code: {remove_deck_res.status_code}")
         
 # ---------------------------------------------------------------- #
-# ------------------  end HANDLER /DECKS COMMAND  ------------------ #
+# ------------------  start HANDLER /DECKS COMMAND  -------------- #
 # ---------------------------------------------------------------- #
 
 async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -189,7 +192,9 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         decks = response_data.get('decks', [])
 
         if not decks: #empty list
-            await update.message.reply_html(text="👀 No decks are present. You can create one with the command /add ")
+            msg="👀 No decks are present. You can create one with the command /add"
+            await show_keyboard(update, context, msg)
+
 
         else:
             msg="🪄 As requested, here's a list of your decks:\n"
@@ -199,12 +204,38 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 deck_name = deck.get('deck_name')
                 msg += f"\n ➡️ <b>{deck_name}</b> - Cards: [TODO] "
 
-            await update.message.reply_html(msg)
+            await show_keyboard(update, context, msg)
 
     else:  #error
         msg = f"Internal error. Status code: {create_deck_res.status_code}"
         await update.message.reply_html(text=msg)
 
 # ---------------------------------------------------------------- #
-# ------------------  end HANDLER /DECKS COMMAND  ------------------ #
+# ---------------------  REPLY KEYBOARD MENU  -------------------- #
 # ---------------------------------------------------------------- #
+async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE, message):
+    keyboard = [
+        [KeyboardButton("✨ Start a session ✨")],
+        [KeyboardButton("📚 Decks"), KeyboardButton("✚ Add"), KeyboardButton("🗑️ Remove")]
+    ]
+
+    #Store keyboard in the context
+    context.user_data['menu'] = ReplyKeyboardMarkup(keyboard, resize_keyboard= True, one_time_keyboard=True)
+    await update.message.reply_html(text=message, reply_markup=context.user_data['menu'])
+
+#menu action call
+async def reply_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+
+    #action allowed
+    actions = {
+        "✨ Start a session ✨": decks,
+        "📚 Decks": decks,
+        "✚ Add": add,
+        "🗑️ Remove": remove,
+        "/cancel": cancel
+    }
+
+    action_function = actions.get(text)
+    if action_function:
+        await action_function(update, context)

@@ -11,10 +11,12 @@ Press Ctrl-C on the command line or send a signal to stop the bot."
 import os
 import logging, requests, textwrap
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
-from bot_manager import help, start, unknown
-from deck_manager import cancel, add_another, set_answer, set_question, set_deck_name, remove_deck, add, remove, decks
+
+from handlers.bot_manager import *
+from handlers.deck_manager import *
+
 
 DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
 
@@ -55,7 +57,12 @@ def main():
     bot.add_handler(CommandHandler('remove', remove))
     bot.add_handler(CommandHandler('decks', decks))
     bot.add_handler(conversation_handler)
+
+    #keyboard handler
     bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
+
+    #reply menu handler
+    bot.add_handler(MessageHandler(filters.TEXT, reply_menu)) 
     
     bot.add_handler(MessageHandler(filters.COMMAND, unknown))
 
