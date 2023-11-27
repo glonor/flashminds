@@ -1,5 +1,0 @@
-Flask
-mysql-connector-python
-git+https://github.com/fasiha/ebisu.git@8cd4f0859e640d98146e88862a3339fe5efcb19a
-dataclasses_json
-requests

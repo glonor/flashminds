@@ -16,4 +16,4 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 # Define the command to run when the container starts
-CMD python business_logic_service.py
+CMD python ebisu_app.py

@@ -4,15 +4,15 @@ from datetime import datetime
 import requests
 from flask import Flask, jsonify, request
 import json
-
-BL_API_BASE_URL = "http://business_logic:5000"
+from os import environ
 
 app = Flask(__name__)
+DL_API_URL = environ.get('DL_URL')
 
 def get_flashcard_model(card_id):
     try:
         endpoint = '/get_flashcard_model'
-        response = requests.get(f'{BL_API_BASE_URL}{endpoint}', json={'card_id': card_id})
+        response = requests.get(f'{DL_API_URL}{endpoint}', json={'card_id': card_id})
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
@@ -21,7 +21,7 @@ def get_flashcard_model(card_id):
 def update_session_statistics(session_id, confidence):
     try:
         endpoint = '/update_session_statistics'
-        response = requests.post(f'{BL_API_BASE_URL}{endpoint}', json={'session_id': session_id, 'confidence': confidence})
+        response = requests.post(f'{DL_API_URL}{endpoint}', json={'session_id': session_id, 'confidence': confidence})
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
@@ -30,7 +30,7 @@ def update_session_statistics(session_id, confidence):
 def update_flashcard(update_data):
     try:
         endpoint = '/update_flashcard'
-        response = requests.post(f'{BL_API_BASE_URL}{endpoint}', json=update_data)
+        response = requests.post(f'{DL_API_URL}{endpoint}', json=update_data)
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
@@ -93,7 +93,7 @@ def review_flashcard():
     
 def get_study_session(deck_id):
     try:
-        get_session_endpoint = f'{BL_API_BASE_URL}/check_study_session'
+        get_session_endpoint = f'{DL_API_URL}/check_study_session'
         response = requests.get(get_session_endpoint, json={'session_id': deck_id})
         return response
     except requests.RequestException as e:
@@ -102,7 +102,7 @@ def get_study_session(deck_id):
 
 def get_flashcards(deck_id):
     try:
-        get_deck_endpoint = f'{BL_API_BASE_URL}/get_flashcards'
+        get_deck_endpoint = f'{DL_API_URL}/get_flashcards'
         response = requests.get(get_deck_endpoint, json={'deck_id': deck_id})
         return response
     except requests.RequestException as e:
