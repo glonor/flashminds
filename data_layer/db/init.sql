@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS decks (
     deck_name VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_deck_name_user (user_id, deck_name),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Create a table for flashcards
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS study_sessions (
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
+    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE
 );
 
 -- Sample data for users

@@ -28,7 +28,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./data_layer/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data_layer/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/mysql
 
   # process_centric:
