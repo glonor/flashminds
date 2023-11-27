@@ -172,7 +172,39 @@ async def remove_deck(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.callback_query.message.edit_text(f"Internal error. Status code: {remove_deck_res.status_code}")
         
+# ---------------------------------------------------------------- #
+# ------------------  end HANDLER /DECKS COMMAND  ------------------ #
+# ---------------------------------------------------------------- #
+
+async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    get_decks_endpoint = f"{BL_API_BASE_URL}/get_decks"
+    user = update.effective_user #telegram user
+    deck_name = update.message.text #input user
+
+    #user deck list
+    get_decks_res = requests.get(get_decks_endpoint, json={"user_id": int(user.id)}, timeout=10)
+
+    if get_decks_res.status_code == 200:  #list deck ok
+        response_data = get_decks_res.json()
+        decks = response_data.get('decks', [])
+
+        if not decks: #empty list
+            await update.message.reply_html(text="👀 No decks are present. You can create one with the command /add ")
+
+        else:
+            msg="🪄 As requested, here's a list of your decks:\n"
+
+            for deck in decks:
+                deck_id = deck.get('deck_id')
+                deck_name = deck.get('deck_name')
+                msg += f"\n ➡️ <b>{deck_name}</b> - Cards: [TODO] "
+
+            await update.message.reply_html(msg)
+
+    else:  #error
+        msg = f"Internal error. Status code: {create_deck_res.status_code}"
+        await update.message.reply_html(text=msg)
 
 # ---------------------------------------------------------------- #
-# ------------------  end HANDLER /ADD COMMAND  ------------------ #
+# ------------------  end HANDLER /DECKS COMMAND  ------------------ #
 # ---------------------------------------------------------------- #

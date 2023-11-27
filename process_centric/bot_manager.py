@@ -65,5 +65,5 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #Command for unknown or unsupported inputs
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    unknown_msg=textwrap.dedent("I don't understand. Please use the `/help` command to see what functionalities I support.")
+    unknown_msg=textwrap.dedent("🤔 I don't understand. Please use the /help command to see what functionalities I support.")
     await update.message.reply_html(text=unknown_msg)

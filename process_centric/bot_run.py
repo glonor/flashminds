@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
 from bot_manager import help, start, unknown
-from deck_manager import cancel, add_another, set_answer, set_question, set_deck_name, remove_deck, add, remove
+from deck_manager import cancel, add_another, set_answer, set_question, set_deck_name, remove_deck, add, remove, decks
 
 DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
 
@@ -53,6 +53,7 @@ def main():
     bot.add_handler(CommandHandler('help', help))
     bot.add_handler(CommandHandler('start', start))
     bot.add_handler(CommandHandler('remove', remove))
+    bot.add_handler(CommandHandler('decks', decks))
     bot.add_handler(conversation_handler)
     bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
     
