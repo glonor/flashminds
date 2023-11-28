@@ -229,13 +229,13 @@ async def reply_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     #action allowed
     actions = {
-        "✨ Start a session ✨": decks,
-        "📚 Decks": decks,
-        "✚ Add": add,
-        "🗑️ Remove": remove,
-        "/cancel": cancel
+        "✨ Start a session ✨": decks(update, context),
+        "📚 Decks": decks(update, context),
+        "✚ Add": add(update, context),
+        "🗑️ Remove": remove(update, context),
+        "/cancel": cancel(update, context)
     }
 
     action_function = actions.get(text)
     if action_function:
-        await action_function(update, context)
+        await action_function
