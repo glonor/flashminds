@@ -4,6 +4,17 @@ services:
   business_logic:
     build: ./business_logic
     links:
+      - data_layer
+    ports:
+      - "5001:5000"
+    environment:
+      - DL_URL=http://data_layer:5000
+    depends_on:
+      - data_layer
+
+  data_layer:
+    build: ./data_layer
+    links:
       - db
     ports:
       - "5000:5000"
@@ -17,7 +28,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data_layer/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/mysql
 
   # process_centric:

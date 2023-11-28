@@ -12,8 +12,8 @@ COPY requirements.txt /app
 # Install the Python dependencies listed in requirements.txt using pip
 RUN pip install -r requirements.txt
 
-# Copy the business_logic_service.py file from the host to the container's /app directory
+# Copy the data_layer_service.py file from the host to the container's /app directory
 COPY . /app
 
 # Define the command to run when the container starts
-CMD python ebisu_app.py
+CMD python -u data_layer_service.py

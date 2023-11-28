@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS decks (
     user_id INT,
     deck_name VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+<<<<<<< HEAD:db/init.sql
+=======
+    UNIQUE KEY unique_deck_name_user (user_id, deck_name),
+>>>>>>> origin/ebisu:data_layer/db/init.sql
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -24,8 +28,8 @@ CREATE TABLE IF NOT EXISTS flashcards (
     deck_id INT,
     question VARCHAR(255) NOT NULL,
     answer VARCHAR(255) NOT NULL,
-    confidence INT CHECK (confidence >= 1 AND confidence <= 5) DEFAULT 1,
-    last_reviewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_reviewed TIMESTAMP,
+    ebisu_model TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    
     FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE
 );
@@ -35,11 +39,11 @@ CREATE TABLE IF NOT EXISTS study_sessions (
     session_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     deck_id INT,
-    average_confidence FLOAT CHECK (average_confidence >= 1 AND average_confidence <= 5),
+    average_confidence FLOAT,
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE  -- Add ON DELETE CASCADE
+    FOREIGN KEY (deck_id) REFERENCES decks(deck_id) ON DELETE CASCADE
 );
 
 -- Sample data for users
@@ -54,14 +58,14 @@ INSERT INTO decks (user_id, deck_name) VALUES
     (789012, 'Biology'); -- User 2's Biology deck
 
 -- Sample data for cards
-INSERT INTO flashcards (deck_id, question, answer, confidence, last_reviewed, created_at) VALUES
-    (1, 'What is 2 + 2?', '4', 4, '2023-01-07 14:45:00', '2023-01-07 14:45:00'),
-    (2, 'Who was the first President of the United States?', 'George Washington', 5, '2023-01-07 14:45:00', '2023-01-07 14:45:00'),
-    (2, 'What ancient civilization built the pyramids?', 'Egyptians', 4, '2023-01-08 10:00:00', '2023-01-07 14:45:00'),
-    (2, 'In which year did World War II end?', '1945', 3, '2023-01-09 12:30:00', '2023-01-07 14:45:00'),
-    (2, 'Who wrote "Romeo and Juliet"?', 'William Shakespeare', 2, '2023-01-10 08:15:00', '2023-01-07 14:45:00'),
-    (2, 'What is the capital of France?', 'Paris', 1, '2023-01-11 16:00:00', '2023-01-07 14:45:00'),
-    (3, 'What is the powerhouse of the cell?', 'Mitochondria', 2, '2023-01-07 14:45:00', '2023-01-07 14:45:00');
+INSERT INTO flashcards (deck_id, question, answer, created_at) VALUES
+    (1, 'What is 2 + 2?', '4', '2023-01-07 14:45:00'),
+    (2, 'Who was the first President of the United States?', 'George Washington', '2023-01-07 14:45:00'),
+    (2, 'What ancient civilization built the pyramids?', 'Egyptians', '2023-01-07 14:45:00'),
+    (2, 'In which year did World War II end?', '1945', '2023-01-07 14:45:00'),
+    (2, 'Who wrote "Romeo and Juliet"?', 'William Shakespeare', '2023-01-07 14:45:00'),
+    (2, 'What is the capital of France?', 'Paris', '2023-01-07 14:45:00'),
+    (3, 'What is the powerhouse of the cell?', 'Mitochondria', '2023-01-07 14:45:00');
 
 -- Sample data for study sessions
 INSERT INTO study_sessions (user_id, deck_id, start_time, end_time, average_confidence) VALUES
