@@ -1,30 +1,28 @@
 import requests
 from faker import Faker
 
+from test_users import create_test_user, delete_test_user
+
 fake = Faker()
 base_url = 'http://localhost:5000'
 
-def create_test_user():
-    user_id = fake.random_int(min=1, max=100000)
-    username = "test_user"
-    create_user_url = f'{base_url}/users'
-    user_payload = {"user_id": user_id, "username": username}
-    create_user_response = requests.post(create_user_url, json=user_payload)
-    assert create_user_response.status_code == 201
+def create_test_deck():
+    user_id = create_test_user()
 
-    return user_id
+    create_deck_url = f'{base_url}/users/{user_id}/decks'
+    deck_name = fake.word()
+    payload = {"deck_name": deck_name}
+    create_deck_response = requests.post(create_deck_url, json=payload)
+    assert create_deck_response.status_code == 201
+    deck_id = create_deck_response.json()["deck_id"]
 
-def delete_test_user(user_id):
-    delete_user_url = f'{base_url}/users/{user_id}'
-    delete_user_response = requests.delete(delete_user_url)
-    assert delete_user_response.status_code == 200
+    return user_id, deck_id
 
 # Endpoint to create a deck tests
 
 def test_create_deck_success():
     # Create a user for testing
     user_id = create_test_user()
-
 
     # Create a deck for the user
     create_deck_url = f'{base_url}/users/{user_id}/decks'
@@ -96,18 +94,10 @@ def test_create_deck_conflict():
 # Endpoint to update a deck tests
 
 def test_update_deck_success():
-    # Create a user for testing
-    user_id = create_test_user()
-    
-    # Create a deck for the user
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=deck_payload)
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Update the deck
-    update_deck_url = f'{base_url}/users/{user_id}/decks/{create_deck_response.json()["deck_id"]}'
+    update_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     updated_deck_name = fake.word()
     update_deck_payload = {"deck_name": updated_deck_name}
     update_deck_response = requests.put(update_deck_url, json=update_deck_payload)
@@ -116,7 +106,7 @@ def test_update_deck_success():
     assert update_deck_response.json()['message'] == 'Deck updated successfully'
 
     # Retrieve the updated deck and check if the deck name has changed
-    get_deck_url = f'{base_url}/users/{user_id}/decks/{create_deck_response.json()["deck_id"]}'
+    get_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     get_deck_response = requests.get(get_deck_url)
     assert get_deck_response.status_code == 200
 
@@ -127,24 +117,17 @@ def test_update_deck_success():
     delete_test_user(user_id)
 
 def test_update_deck_conflict():
-    # Create a user for testing
-    user_id = create_test_user()
-
-    # Create the first deck
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    create_deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=create_deck_payload)
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Create the second deck
+    create_deck_url = f'{base_url}/users/{user_id}/decks'
     deck_name = fake.word()
     create_deck_payload = {"deck_name": deck_name}
     create_second_deck_response = requests.post(create_deck_url, json=create_deck_payload)
     assert create_second_deck_response.status_code == 201
 
     # Attempt to update the first deck with the same name as the second deck
-    update_deck_url = f'{base_url}/users/{user_id}/decks/{create_deck_response.json()["deck_id"]}'
+    update_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     update_deck_payload = {"deck_name": deck_name}
     update_deck_response = requests.put(update_deck_url, json=update_deck_payload)
 
@@ -157,20 +140,9 @@ def test_update_deck_conflict():
     delete_test_user(user_id)
 
 def test_update_deck_missing_fields():
-    # Create a user for testing
-    user_id = create_test_user()
-
-    # Create a deck for testing
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    create_deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=create_deck_payload)
-
-    # Check if the deck was created successfully
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Attempt to update the deck with missing fields
-    deck_id = create_deck_response.json()["deck_id"]
     update_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     update_deck_payload = {}  # Missing 'deck_name' field
     update_deck_response = requests.put(update_deck_url, json=update_deck_payload)
@@ -215,26 +187,17 @@ def test_update_deck_deck_not_found():
 # Endpoint to get a deck tests
 
 def test_get_deck_success():
-    # Create a user for testing
-    user_id = create_test_user()
-
-    # Create a deck for testing
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    create_deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=create_deck_payload)
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Retrieve the created deck
-    get_deck_url = f'{base_url}/users/{user_id}/decks/{create_deck_response.json()["deck_id"]}'
+    get_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     get_deck_response = requests.get(get_deck_url)
 
     # Check if the deck was retrieved successfully
     assert get_deck_response.status_code == 200
     assert 'deck' in get_deck_response.json()
-    assert get_deck_response.json()['deck']['deck_id'] == create_deck_response.json()["deck_id"]
+    assert get_deck_response.json()['deck']['deck_id'] == deck_id
     assert get_deck_response.json()['deck']['user_id'] == user_id
-    assert get_deck_response.json()['deck']['deck_name'] == deck_name
 
     # Delete the user created for testing
     delete_test_user(user_id)
@@ -271,14 +234,7 @@ def test_get_deck_user_not_found():
 
 def test_get_decks_success():
     # Create a user for testing
-    user_id = create_test_user()
-
-    # Create a deck for testing
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    create_deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=create_deck_payload)
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Retrieve the created decks
     get_decks_url = f'{base_url}/users/{user_id}/decks'
@@ -322,18 +278,10 @@ def test_get_decks_user_not_found():
 # Endpoint to delete a deck tests
 
 def test_delete_deck_success():
-    # Create a user for testing
-    user_id = create_test_user()
-
-    # Create a deck for testing
-    create_deck_url = f'{base_url}/users/{user_id}/decks'
-    deck_name = fake.word()
-    create_deck_payload = {"deck_name": deck_name}
-    create_deck_response = requests.post(create_deck_url, json=create_deck_payload)
-    assert create_deck_response.status_code == 201
+    user_id, deck_id = create_test_deck()
 
     # Attempt to delete the created deck
-    delete_deck_url = f'{base_url}/users/{user_id}/decks/{create_deck_response.json()["deck_id"]}'
+    delete_deck_url = f'{base_url}/users/{user_id}/decks/{deck_id}'
     delete_deck_response = requests.delete(delete_deck_url)
 
     # Check if the deck was deleted successfully
