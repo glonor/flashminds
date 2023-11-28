@@ -11,23 +11,21 @@ Press Ctrl-C on the command line or send a signal to stop the bot."
 import os
 import logging, requests, textwrap
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
-from bot_manager import help, start, unknown
-from deck_manager import cancel, button_click, write_answer, write_question, set_deck_name, add, decks
 
-CHOOSING, MENU, QUESTION, ANSWER = range(4)
+from handlers.bot_manager import *
+from handlers.deck_manager import *
+
+
+DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
 
 #Load environment variables from the .env file
 load_dotenv()
 
 #Logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG
-)
-
-logging.getLogger('telegram.ext.conversationhandler').setLevel(logging.DEBUG)
-#logging.getLogger("httpx").setLevel(logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.INFO) #Levels: CRITICAL, ERROR, WARNING, INFO
 logger = logging.getLogger(__name__)
     
 def main():
@@ -39,27 +37,34 @@ def main():
     #Create the Application and pass it bot's token.
     bot = Application.builder().token(TELEGRAM_API_TOKEN).build()
 
-
+    #Set structure conversation handler /add command
     conversation_handler = ConversationHandler(
         entry_points=[CommandHandler('add', add)],
         states={
-            CHOOSING: [MessageHandler(filters.TEXT, set_deck_name)],
-            QUESTION: [MessageHandler(filters.TEXT, write_question)],
-            ANSWER: [MessageHandler(filters.TEXT, write_answer)]
+            DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
+            QUESTION: [MessageHandler(filters.TEXT, set_question)],
+            ANSWER: [MessageHandler(filters.TEXT, set_answer)],
+            ADD_ANOTHER: [CallbackQueryHandler(add_another, pattern='^(yes|no)$')]
+
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
 
-
     #Set commands handler
-    bot.add_handler(conversation_handler)
     bot.add_handler(CommandHandler('help', help))
     bot.add_handler(CommandHandler('start', start))
-    bot.add_handler(MessageHandler(filters.COMMAND, unknown))
+    bot.add_handler(CommandHandler('remove', remove))
+    bot.add_handler(CommandHandler('decks', decks))
+    bot.add_handler(conversation_handler)
 
-    #Set button handler
-    bot.add_handler(CallbackQueryHandler(button_click))
+    #keyboard handler
+    bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
+
+    #reply menu handler
+    bot.add_handler(MessageHandler(filters.TEXT, reply_menu)) 
+    
+    bot.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     #Run the bot until the user presses Ctrl-C
     bot.run_polling(allowed_updates=Update.ALL_TYPES)
