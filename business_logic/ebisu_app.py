@@ -65,8 +65,8 @@ def review_flashcard():
             if flashcard['ebisu_model'] is None:
                 model = ebisu.initModel(firstHalflife=10, lastHalflife=10e3, firstWeight=0.9, numAtoms=5, initialAlphaBeta=2.0)
             else:
-                prior_model =  response.json().get('model')
-                last_reviewed = response.json().get('last_reviewed')
+                prior_model =  flashcard['ebisu_model']
+                last_reviewed = flashcard['last_reviewed']
                 elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
                 confidence_score = (confidence - 1) / 4.0
                 decoded_data = json.loads(prior_model)
@@ -168,12 +168,14 @@ def get_next_flashcard():
     flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
 
     # Return the flashcard with the lowest recall_probability
-    return jsonify(flashcards[0]), 200
     # return jsonify({
     #     'question': flashcards[0]['question'],
     #     'answer': flashcards[0]['answer'],
     #     'card_id': flashcards[0]['card_id']
     # }), 200
+
+    # For debugging purposes    
+    return jsonify(flashcards[0]), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
