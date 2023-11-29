@@ -6,7 +6,7 @@ services:
     links:
       - data_layer
     ports:
-      - "5001:5000"
+      - "5001:5001"
     environment:
       - DL_URL=http://data_layer:5000
     depends_on:

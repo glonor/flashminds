@@ -49,6 +49,14 @@ def review_flashcard():
 
         if card_id is None or session_id is None or user_id is None or deck_id is None or confidence is None or not (1 <= confidence <= 5):
             return jsonify({'message': 'Missing required fields'}), 400
+        
+        # Check if session exists and is ongoing
+        session_response = get_study_session(user_id, deck_id, session_id)
+        if session_response.status_code != 200:
+            return session_response.json(), session_response.status_code
+        session = session_response.json().get('study_session')
+        if session.get('end_time') != None:
+            return jsonify({'message': 'Session is already over'}), 400
 
         # Get flashcard model
         response = get_flashcard(user_id, deck_id, card_id)
@@ -90,26 +98,26 @@ def review_flashcard():
         if response.status_code == 200:
             return jsonify({'message': 'Flashcard reviewed successfully'}), 200
         else:
-            return jsonify(response.json()), response.status_code
+            return response.json(), response.status_code
 
     except Exception as e:
         # Log the exception for debugging purposes
         print(f"Error reviewing flashcard: {e}")
         return jsonify({'message': 'Internal Server Error'}), 500
     
-def get_study_session(deck_id):
+def get_study_session(user_id, deck_id, session_id):
     try:
-        get_session_endpoint = f'{DL_API_URL}/check_study_session'
-        response = requests.get(get_session_endpoint, json={'session_id': deck_id})
+        endpoint = f'/users/{user_id}/decks/{deck_id}/study_sessions/{session_id}'
+        response = requests.get(f'{DL_API_URL}{endpoint}')
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
 
 
-def get_flashcards(deck_id):
+def get_flashcards(user_id, deck_id):
     try:
-        get_deck_endpoint = f'{DL_API_URL}/get_flashcards'
-        response = requests.get(get_deck_endpoint, json={'deck_id': deck_id})
+        endpoint = f'/users/{user_id}/decks/{deck_id}/flashcards'
+        response = requests.get(f'{DL_API_URL}{endpoint}')
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
@@ -130,23 +138,27 @@ def get_recall_probability(flashcard):
 def get_next_flashcard():
     data = request.get_json()
     session_id = data.get('session_id')
+    deck_id = data.get('deck_id')
+    user_id = data.get('user_id')
 
-    if session_id is None:
-        return jsonify({'error': 'session_id parameter is required'}), 400
+    if session_id is None or deck_id is None or user_id is None:
+        return jsonify({'message': 'Missing required fields'}), 400
 
     # Check if session exists and is ongoing
-    session_response = get_study_session(session_id)
-    if session_response.status_code == 200:
-        deck_id = session_response.json().get('deck_id')  # Get the deck_id from the response
-    else:
-        return session_response, session_response.status_code
+    session_response = get_study_session(user_id, deck_id, session_id)
+    if session_response.status_code != 200:
+        return session_response.json(), session_response.status_code
+    
+    session = session_response.json().get('study_session')
+    if session.get('end_time') != None:
+        return jsonify({'message': 'Session is already over'}), 400
 
     # Get all flashcards in the deck
-    flashcards_response = get_flashcards(deck_id)
+    flashcards_response = get_flashcards(user_id, deck_id)
     if flashcards_response.status_code == 200:
         flashcards = flashcards_response.json().get('flashcards')
     else:
-        return flashcards_response, flashcards_response.status_code
+        return flashcards_response.json(), flashcards_response.status_code
 
     # Get the recall probability for each flashcard
     for flashcard in flashcards:
@@ -164,4 +176,4 @@ def get_next_flashcard():
     # }), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5001)
