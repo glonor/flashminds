@@ -9,28 +9,28 @@ from os import environ
 app = Flask(__name__)
 DL_API_URL = environ.get('DL_URL')
 
-def get_flashcard_model(card_id):
+def get_flashcard(user_id, deck_id, card_id):
     try:
-        endpoint = '/get_flashcard_model'
-        response = requests.get(f'{DL_API_URL}{endpoint}', json={'card_id': card_id})
+        endpoint = f'/users/{user_id}/decks/{deck_id}/flashcards/{card_id}'
+        response = requests.get(f'{DL_API_URL}{endpoint}')
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
 
 
-def update_session_statistics(session_id, confidence):
+def update_session_statistics(user_id, deck_id, session_id, confidence):
     try:
-        endpoint = '/update_session_statistics'
-        response = requests.post(f'{DL_API_URL}{endpoint}', json={'session_id': session_id, 'confidence': confidence})
+        endpoint = f'/users/{user_id}/decks/{deck_id}/study_sessions/{session_id}'
+        response = requests.put(f'{DL_API_URL}{endpoint}', json={'confidence': confidence})
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
 
 
-def update_flashcard(update_data):
+def update_flashcard(user_id, deck_id, card_id, update_data):
     try:
-        endpoint = '/update_flashcard'
-        response = requests.post(f'{DL_API_URL}{endpoint}', json=update_data)
+        endpoint = f'/users/{user_id}/decks/{deck_id}/flashcards/{card_id}'
+        response = requests.put(f'{DL_API_URL}{endpoint}', json=update_data)
         return response
     except requests.RequestException as e:
         return jsonify({'error': f'Error making request to remote server: {e}'}), 500
@@ -41,26 +41,30 @@ def review_flashcard():
     try:
         # Retrieve data from the incoming request
         data = request.get_json()
+        user_id = data.get('user_id')
+        deck_id = data.get('deck_id')
         card_id = data.get('card_id')
         confidence = data.get('confidence')
         session_id = data.get('session_id')
 
-        if card_id is None or session_id is None or confidence is None or not (1 <= confidence <= 5):
-            return jsonify({'error': 'card_id, session_id and confidence parameters are required, and confidence must be between 1 and 5'}), 400
+        if card_id is None or session_id is None or user_id is None or deck_id is None or confidence is None or not (1 <= confidence <= 5):
+            return jsonify({'message': 'Missing required fields'}), 400
 
         # Get flashcard model
-        response = get_flashcard_model(card_id)
-        if response.status_code == 204:
-            model = ebisu.initModel(firstHalflife=10, lastHalflife=10e3, firstWeight=0.9, numAtoms=5, initialAlphaBeta=2.0)
-        elif response.status_code == 200:
-            prior_model =  response.json().get('model')
-            last_reviewed = response.json().get('last_reviewed')
-            elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
-            confidence_score = (confidence - 1) / 4.0
-            decoded_data = json.loads(prior_model)
-            prior_model = [ebisu.Atom.from_dict(atom_data) for atom_data in decoded_data]
+        response = get_flashcard(user_id, deck_id, card_id)
+        flashcard = response.json().get('flashcard')
+        if response.status_code == 200:
+            if flashcard['ebisu_model'] is None:
+                model = ebisu.initModel(firstHalflife=10, lastHalflife=10e3, firstWeight=0.9, numAtoms=5, initialAlphaBeta=2.0)
+            else:
+                prior_model =  response.json().get('model')
+                last_reviewed = response.json().get('last_reviewed')
+                elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
+                confidence_score = (confidence - 1) / 4.0
+                decoded_data = json.loads(prior_model)
+                prior_model = [ebisu.Atom.from_dict(atom_data) for atom_data in decoded_data]
 
-            model = ebisu.updateRecall(prior_model, confidence_score, 1, elapsed_time)
+                model = ebisu.updateRecall(prior_model, confidence_score, 1, elapsed_time)
         else:
             return response.json(), response.status_code
 
@@ -75,21 +79,23 @@ def review_flashcard():
         }
 
         # Update session statistics
-        response = update_session_statistics(session_id, confidence)
+        response = update_session_statistics(user_id, deck_id, session_id, confidence)
         if response.status_code != 200:
             return response.json(), response.status_code
 
         # Update flashcard
-        response = update_flashcard(update_data)
+        response = update_flashcard(user_id, deck_id, card_id, update_data)
 
         # Check the response from the server and return a response to the client
-        if response.status_code == 201:
-            return jsonify({'message': 'Flashcard reviewed successfully'}), 201
+        if response.status_code == 200:
+            return jsonify({'message': 'Flashcard reviewed successfully'}), 200
         else:
             return jsonify(response.json()), response.status_code
 
     except Exception as e:
-        return jsonify({'error': f'Unexpected error: {e}'}), 500
+        # Log the exception for debugging purposes
+        print(f"Error reviewing flashcard: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
     
 def get_study_session(deck_id):
     try:

@@ -733,12 +733,14 @@ def update_study_session(user_id, deck_id, session_id):
     try:
         data = request.get_json()
 
-        if 'average_confidence' not in data or 'end_time' not in data:
-            return jsonify({'message': 'Missing required fields'}), 400
+        # Check if at least one field is present
+        if 'confidence' not in data and 'end_time' not in data:
+            return jsonify({'message': 'At least one field (confidence or end_time) is required'}), 400
 
-        average_confidence = data.get('average_confidence')
+        # Extract fields from the payload
+        confidence = data.get('confidence')
         end_time = data.get('end_time')
-        
+
         # Create a database connection and cursor
         connection = create_db_connection()
         cursor = connection.cursor()
@@ -748,29 +750,51 @@ def update_study_session(user_id, deck_id, session_id):
 
         if not user_exists:
             return jsonify({'message': 'User not found'}), 404
-        
+
         # Check if the deck exists and belongs to the user
         deck_exists = check_deck_exists(cursor, user_id, deck_id)
 
         if not deck_exists:
             return jsonify({'message': 'Deck not found'}), 404
+        
+        # Check if the study session exists
+        query = "SELECT 1 FROM study_sessions WHERE session_id = %s AND deck_id = %s"
+        values = (session_id, deck_id)
+        cursor.execute(query, values)
+        session_exists = cursor.fetchone()
 
-        # Update study session data in the database
-        query = "UPDATE study_sessions SET average_confidence = %s, end_time = %s WHERE session_id = %s AND deck_id = %s"
-        values = (average_confidence, end_time, session_id, deck_id)
+        if session_exists is None:
+            return jsonify({'message': 'Study session not found'}), 404
+
+        # Build the query dynamically based on the fields present
+        query = "UPDATE study_sessions SET"
+        values = []
+
+        if 'confidence' in data:
+            query += " average_confidence = %s,"
+            values.append(confidence)
+
+        if 'end_time' in data:
+            query += " end_time = %s,"
+            values.append(end_time)
+
+        # Remove the trailing comma from the query
+        query = query.rstrip(',')
+
+        # Add the common conditions to the query
+        query += " WHERE session_id = %s AND deck_id = %s"
+        values.extend([session_id, deck_id])
+
+        # Execute the query
         cursor.execute(query, values)
         connection.commit()
-
-        # Check if any rows were affected
-        rows_affected = cursor.rowcount
 
         # Close the cursor and the database connection
         cursor.close()
         connection.close()
 
-        if rows_affected == 0:
-            return jsonify({'message': 'Study session not found'}), 404
         return jsonify({'message': 'Study session updated successfully'}), 200
+
     except Exception as e:
         # Log the exception for debugging purposes
         print(f"Error updating study session: {e}")

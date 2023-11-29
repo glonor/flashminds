@@ -162,7 +162,7 @@ def test_update_study_session_success():
     session_id, deck_id, user_id = create_test_study_session()
     
     update_study_session_url = f'{base_url}/users/{user_id}/decks/{deck_id}/study_sessions/{session_id}'
-    update_study_session_payload = {"average_confidence": 0.8, "end_time": "2023-01-01T12:00:00"}
+    update_study_session_payload = {"confidence": 0.8, "end_time": "2023-01-01T12:00:00"}
     update_study_session_response = requests.put(update_study_session_url, json=update_study_session_payload)
 
     assert update_study_session_response.status_code == 200
@@ -180,7 +180,7 @@ def test_update_study_session_missing_fields():
 
     assert update_study_session_response.status_code == 400
     assert 'message' in update_study_session_response.json()
-    assert update_study_session_response.json()['message'] == 'Missing required fields'
+    assert update_study_session_response.json()['message'] == 'At least one field (confidence or end_time) is required'
 
     delete_test_user(user_id)
 

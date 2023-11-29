@@ -16,4 +16,4 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 # Define the command to run when the container starts
-CMD python ebisu_app.py
+CMD python -u ebisu_app.py

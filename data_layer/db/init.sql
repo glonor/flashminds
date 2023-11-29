@@ -15,10 +15,7 @@ CREATE TABLE IF NOT EXISTS decks (
     user_id INT,
     deck_name VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-<<<<<<< HEAD:db/init.sql
-=======
     UNIQUE KEY unique_deck_name_user (user_id, deck_name),
->>>>>>> origin/ebisu:data_layer/db/init.sql
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
