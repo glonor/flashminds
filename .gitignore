@@ -1,10 +1,6 @@
 .DS_Store
 .env
 __pycache__/
-<<<<<<< HEAD
 .pytest_cache/
 tests/__pycache__/
 data/
-=======
-data/*
->>>>>>> process_centric

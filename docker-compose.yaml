@@ -1,35 +1,47 @@
 version: "3"
 
 services:
-  business_logic:
-    build: ./business_logic
-    links:
-      - data_layer
+  chatgpt_adapter:
+    build: ./chatgpt_adapter
+    # links:
+    #   - business_logic
     ports:
-      - "5001:5001"
+      - "5002:5002"
+    env_file:
+    - .env
     environment:
-      - DL_URL=http://data_layer:5000
-    depends_on:
-      - data_layer
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+  #   depends_on:
+  #     - business_logic
+  # business_logic:
+  #   build: ./business_logic
+  #   links:
+  #     - data_layer
+  #   ports:
+  #     - "5001:5001"
+  #   environment:
+  #     - DL_URL=http://data_layer:5000
+  #   depends_on:
+  #     - data_layer
 
-  data_layer:
-    build: ./data_layer
-    links:
-      - db
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
+  # data_layer:
+  #   build: ./data_layer
+  #   links:
+  #     - db
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     - db
   
-  db:
-    image: mysql:8.1
-    ports:
-      - "32000:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./data_layer/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./data:/var/lib/mysql
+  # db:
+  #   image: mysql:8.1
+  #   ports:
+  #     - "32000:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #   volumes:
+  #     - ./data_layer/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #     - ./data:/var/lib/mysql
 
   # process_centric:
   #   build: ./process_centric
