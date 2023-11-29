@@ -72,6 +72,10 @@ def review_flashcard():
                 decoded_data = json.loads(prior_model)
                 prior_model = [ebisu.Atom.from_dict(atom_data) for atom_data in decoded_data]
 
+                # To avoid division by zero error
+                if elapsed_time == 0:
+                    elapsed_time = 1
+
                 model = ebisu.updateRecall(prior_model, confidence_score, 1, elapsed_time)
         else:
             return response.json(), response.status_code

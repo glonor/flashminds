@@ -39,6 +39,50 @@ def test_review_flashcard():
     delete_user_response = requests.delete(delete_user_url)
     assert delete_user_response.status_code == 200
 
+def test_review_again_flashcard():
+    # Create a user
+    flashcard_id, deck_id, user_id = create_test_flashcard()
+
+    # Start a study session
+    start_session_url = f'{DL_API_URL}/users/{user_id}/decks/{deck_id}/study_sessions'
+    start_session_response = requests.post(start_session_url)
+    assert start_session_response.status_code == 201
+    session_id = start_session_response.json()['session_id']
+
+    # Review the flashcard
+    review_flashcard_url = f'{base_url}/review_flashcard'
+    review_payload = {
+        "user_id": user_id,
+        "deck_id": deck_id,
+        "card_id": flashcard_id,
+        "confidence": 3,
+        "session_id": session_id
+    }
+    review_flashcard_response = requests.post(review_flashcard_url, json=review_payload)
+
+    # Check the response from the server
+    assert review_flashcard_response.status_code == 200
+    assert review_flashcard_response.json()['message'] == 'Flashcard reviewed successfully'
+
+    # Review the flashcard again
+    new_review_payload = {
+        "user_id": user_id,
+        "deck_id": deck_id,
+        "card_id": flashcard_id,
+        "confidence": 5,
+        "session_id": session_id
+    }
+    review_again_flashcard_response = requests.post(review_flashcard_url, json=new_review_payload)
+
+    # Check the response from the server
+    assert review_again_flashcard_response.status_code == 200
+    assert review_again_flashcard_response.json()['message'] == 'Flashcard reviewed successfully'
+
+    # Clean up: Delete the user and associated data
+    delete_user_url = f'{DL_API_URL}/users/{user_id}'
+    delete_user_response = requests.delete(delete_user_url)
+    assert delete_user_response.status_code == 200
+
 def test_review_flashcard_with_expired_session():
     # Create a user
     flashcard_id, deck_id, user_id = create_test_flashcard()
