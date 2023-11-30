@@ -1,11 +1,10 @@
-import os
-from flask import Flask, request, jsonify
-from PIL import Image
+from io import BytesIO
+
 import pytesseract
+from flask import Flask, jsonify, request
+from PIL import Image
 
 app = Flask(__name__)
-
-UPLOAD_FOLDER = 'uploads'
 
 exts = Image.registered_extensions()
 ALLOWED_EXTENSIONS = {ex for ex, f in exts.items() if f in Image.OPEN and f in Image.SAVE}
@@ -29,10 +28,8 @@ def ocr():
         
         # Process the file
         if file and allowed_file(file.filename):
-            filename = file.filename.lower()
-            image_file = os.path.join(UPLOAD_FOLDER, filename)
-            file.save(image_file)
-            text = pytesseract.image_to_string(Image.open(image_file))
+            image_data = BytesIO(file.read())
+            text = pytesseract.image_to_string(Image.open(image_data))
             return jsonify({"text": text}), 200
     except Exception as e:
         # Log the exception for debugging purposes

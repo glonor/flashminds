@@ -10,9 +10,6 @@ COPY eng.traineddata /usr/share/tessdata
 # Set the working directory inside the container to /app
 WORKDIR /app
 
-# Create uploads directory inside the container
-RUN mkdir /app/uploads
-
 COPY requirements.txt /app
 
 # Install the Python dependencies listed in requirements.txt using pip
