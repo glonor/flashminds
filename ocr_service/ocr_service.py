@@ -24,18 +24,17 @@ def ocr():
         
         # Check if the file type is supported
         if not allowed_file(file.filename):
-            return jsonify({"message": "The file type you uploaded is not supported"}), 400
+            return jsonify({"message": "Unsupported media type. Please upload a supported image file"}), 415
         
         # Process the file
         if file and allowed_file(file.filename):
             image_data = BytesIO(file.read())
             text = pytesseract.image_to_string(Image.open(image_data))
             text = text.replace("\n", " ")
-            return jsonify({"text": text}), 200
+            return jsonify({"text": text, "message": "OCR processing successful"}), 200
     except Exception as e:
-        # Log the exception for debugging purposes
-        print(f"Error reviewing flashcard: {e}")
-        return jsonify({'message': 'Internal Server Error'}), 500
+        print(f"Unexpected Error: {e}")
+        return jsonify({"message": "Internal Server Error"}), 500
 
 # Start Application
 if __name__ == '__main__':
