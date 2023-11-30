@@ -27,11 +27,15 @@ def ocr():
             return jsonify({"message": "Unsupported media type. Please upload a supported image file"}), 415
         
         # Process the file
-        if file and allowed_file(file.filename):
-            image_data = BytesIO(file.read())
-            text = pytesseract.image_to_string(Image.open(image_data))
-            text = text.replace("\n", " ")
+        image_data = BytesIO(file.read())
+        text = pytesseract.image_to_string(Image.open(image_data))
+        text = text.replace("\n", " ")
+        
+        # Check if the image contains text
+        if text:
             return jsonify({"text": text, "message": "OCR processing successful"}), 200
+        return jsonify({"message": "Unable to extract text from the image"}), 400
+
     except Exception as e:
         print(f"Unexpected Error: {e}")
         return jsonify({"message": "Internal Server Error"}), 500
