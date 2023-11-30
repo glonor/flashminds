@@ -1,8 +1,8 @@
 # Use the official Python 3.11 image as the base image
 FROM python:3.11
 
-# Expose port 5000 for incoming connections
-EXPOSE 5000
+# Expose port 5001 for incoming connections
+EXPOSE 5001
 
 # Set the working directory inside the container to /app
 WORKDIR /app

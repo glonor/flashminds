@@ -30,6 +30,7 @@ def ocr():
         if file and allowed_file(file.filename):
             image_data = BytesIO(file.read())
             text = pytesseract.image_to_string(Image.open(image_data))
+            text = text.replace("\n", " ")
             return jsonify({"text": text}), 200
     except Exception as e:
         # Log the exception for debugging purposes
