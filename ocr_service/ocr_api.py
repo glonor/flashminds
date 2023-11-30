@@ -13,14 +13,18 @@ ALLOWED_EXTENSIONS = {ex for ex, f in exts.items() if f in Image.OPEN and f in I
 def allowed_file(filename):
     return '.' in filename and filename[filename.rfind('.'):].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/ocr', methods=['POST'])
-def ocr():
+@app.route('/perform_ocr', methods=['POST'])
+def perform_ocr():
     try:
         # Check if the post request has the image
         if 'image' not in request.files:
             return jsonify({"message": "Data posted does not contain an image"}), 400
         
         file = request.files['image']
+
+        # Check if the image is empty
+        if file.filename == '':
+            return jsonify({"message": "No image file uploaded"}), 400
         
         # Check if the file type is supported
         if not allowed_file(file.filename):
@@ -40,6 +44,5 @@ def ocr():
         print(f"Unexpected Error: {e}")
         return jsonify({"message": "Internal Server Error"}), 500
 
-# Start Application
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5003)

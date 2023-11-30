@@ -9,7 +9,10 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 MAX_RETRIES = 3
 
-@app.route('/paraphrase', methods=['GET'])
+class FlashcardFormatError(Exception):
+    pass
+
+@app.route('/paraphrase', methods=['POST'])
 def paraphrase():
     try:
         # Extract the input flashcard from the request
@@ -30,21 +33,29 @@ def paraphrase():
                 # Extract the paraphrased flashcard from OpenAI response
                 paraphrased_flashcard = json.loads(completion.choices[0].message.content)
 
+                # Check that json formatted flashcard has only a question and answer
+                if 'question' not in paraphrased_flashcard or 'answer' not in paraphrased_flashcard or len(paraphrased_flashcard) != 2:
+                    # raise a custom exception if the flashcard is not in the correct format
+                    raise FlashcardFormatError('Paraphrased flashcard is not in the correct format')
+                    
+
                 # Return the paraphrased flashcard as JSON response
                 return jsonify(paraphrased_flashcard), 200
 
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, FlashcardFormatError) as e:
                 # Retry if JSON loading fails
                 if attempt < MAX_RETRIES - 1:
                     continue
                 else:
+                    print(f'Error generating paraphrase: {e}')
                     return jsonify({'message': 'Unable to generate a valid JSON representation from ChatGPT after multiple attempts'}), 500
 
     except Exception as e:
-        # Handle errors and return an appropriate response
-        return jsonify({'error': str(e)}), 500
+        # Log the exception for debugging purposes
+        print(f"Error generating paraphrase: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
 
-@app.route('/generate_flashcard', methods=['GET'])
+@app.route('/generate_flashcard', methods=['POST'])
 def generate_flashcard():
     try:
         # Extract the input text from the request
@@ -76,8 +87,9 @@ def generate_flashcard():
                         return jsonify({'message': 'Unable to generate a valid JSON representation from ChatGPT after multiple attempts'}), 500
 
     except Exception as e:
-        # Handle errors and return an appropriate response
-        return jsonify({'error': str(e)}), 500
+        # Log the exception for debugging purposes
+        print(f"Error generating flashcard: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5002)

@@ -3,17 +3,13 @@ version: "3"
 services:
   ocr_service:
     build: ./ocr_service
-    links:
-      - business_logic
     ports:
       - "5003:5003"
-    depends_on:
-      - business_logic
 
-  chatgpt_adapter:
-    build: ./chatgpt_adapter
-    # links:
-    #   - business_logic
+  chatgpt_service:
+    build: ./chatgpt_service
+    links:
+      - scheduler_service
     ports:
       - "5002:5002"
     env_file:
@@ -21,20 +17,21 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
-      - business_logic
-  business_logic:
-    build: ./business_logic
+      - scheduler_service
+
+  scheduler_service:
+    build: ./scheduler_service
     links:
-      - data_layer
+      - flashcard_service
     ports:
       - "5001:5001"
     environment:
-      - DL_URL=http://data_layer:5000
+      - DL_URL=http://flashcard_service:5000
     depends_on:
-      - data_layer
+      - flashcard_service
 
-  data_layer:
-    build: ./data_layer
+  flashcard_service:
+    build: ./flashcard_service
     links:
       - db
     ports:
@@ -49,10 +46,27 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./data_layer/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./flashcard_service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/mysql
 
-  # process_centric:
-  #   build: ./process_centric
+  # telegram_bot:
+  #   build: ./telegram_bot
   #   depends_on:
-  #     - business_logic
+  #     - scheduler_service
+  #     - chatgpt_service
+  #     - ocr_service
+  #     - flashcard_service
+  #   environment:
+  #     - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+  #     - CHATGPT_URL=http://chatgpt_service:5002
+  #     - OCR_URL=http://ocr_service:5003
+  #     - SCHEDULER_URL=http://scheduler_service:5001
+  #     - DL_URL=http://flashcard_service:5000
+  #   links:
+  #     - scheduler_service
+  #     - chatgpt_service
+  #     - ocr_service
+  #     - flashcard_service
+  #   env_file:
+  #   - .env
+
