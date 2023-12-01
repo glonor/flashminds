@@ -184,7 +184,7 @@ def get_next_flashcard():
             # Generate paraphrased flashcard
             paraphrase_url = f'{CHATGPT_URL}/paraphrase'
             paraphrase_payload = {
-                'flashcard': flashcard
+                'flashcard': "{flashcard}"
             }
             paraphrase_response = requests.post(paraphrase_url, json=paraphrase_payload)
 
