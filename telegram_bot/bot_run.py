@@ -18,7 +18,7 @@ from handlers.bot_manager import *
 from handlers.deck_manager import *
 
 
-DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
+DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -42,9 +42,11 @@ def main():
         entry_points=[CommandHandler('add', add)],
         states={
             DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
+            INPUT: [CallbackQueryHandler(opt_input, pattern='^(text|pic|finish)$')],
+            IMAGE: [MessageHandler(filters.PHOTO | filters. Document.ALL, get_card_generated)],
+            REGENERATE: [CallbackQueryHandler(regenerate_card, pattern='^(ok|regenerate)$')],
             QUESTION: [MessageHandler(filters.TEXT, set_question)],
             ANSWER: [MessageHandler(filters.TEXT, set_answer)],
-            ADD_ANOTHER: [CallbackQueryHandler(add_another, pattern='^(yes|no)$')]
 
         },
         fallbacks=[CommandHandler('cancel', cancel)],
