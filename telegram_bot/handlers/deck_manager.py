@@ -163,7 +163,7 @@ async def get_card_generated(update: Update, context: ContextTypes.DEFAULT_TYPE)
     #clean up the downloaded file
     os.remove(file_path)
 
-#3a ---- generate card: OCR + GPT
+#3a ---- regenerate card: OCR + GPT
 async def regenerate_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user #telegram user
     query = update.callback_query
