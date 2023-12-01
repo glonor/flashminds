@@ -38,7 +38,7 @@ def main():
     bot = Application.builder().token(TELEGRAM_API_TOKEN).build()
 
     #Set structure conversation handler /add command
-    conversation_handler = ConversationHandler(
+    conversation_handler_add = ConversationHandler(
         entry_points=[CommandHandler('add', add)],
         states={
             DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
@@ -56,7 +56,7 @@ def main():
     bot.add_handler(CommandHandler('start', start))
     bot.add_handler(CommandHandler('remove', remove))
     bot.add_handler(CommandHandler('decks', decks))
-    bot.add_handler(conversation_handler)
+    bot.add_handler(conversation_handler_add)
 
     #keyboard handler
     bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
