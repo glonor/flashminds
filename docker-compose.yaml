@@ -27,6 +27,7 @@ services:
       - "5001:5001"
     environment:
       - DL_URL=http://flashcard_service:5000
+      - CHATGPT_URL=http://chatgpt_service:5002
     depends_on:
       - flashcard_service
 
