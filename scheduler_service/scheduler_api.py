@@ -68,7 +68,8 @@ def review_flashcard():
             else:
                 prior_model =  flashcard['ebisu_model']
                 last_reviewed = flashcard['last_reviewed']
-                elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
+                # Get the elapsed time since the last review in hours
+                elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 3600)
                 confidence_score = (confidence - 1) / 4.0
                 decoded_data = json.loads(prior_model)
                 prior_model = [ebisu.Atom.from_dict(atom_data) for atom_data in decoded_data]
@@ -135,7 +136,7 @@ def get_recall_probability(flashcard):
         f_model = json.loads(flashcard['ebisu_model'])
         f_model = [ebisu.Atom.from_dict(atom_data) for atom_data in f_model]
         last_reviewed = flashcard['last_reviewed']
-        elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds())
+        elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 3600)
         return ebisu.predictRecall(f_model, elapsed_time)
 
 
