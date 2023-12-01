@@ -140,46 +140,52 @@ def get_recall_probability(flashcard):
 
 @app.route('/get_next_flashcard', methods=['GET'])
 def get_next_flashcard():
-    data = request.get_json()
-    session_id = data.get('session_id')
-    deck_id = data.get('deck_id')
-    user_id = data.get('user_id')
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        deck_id = data.get('deck_id')
+        user_id = data.get('user_id')
 
-    if session_id is None or deck_id is None or user_id is None:
-        return jsonify({'message': 'Missing required fields'}), 400
+        if session_id is None or deck_id is None or user_id is None:
+            return jsonify({'message': 'Missing required fields'}), 400
 
-    # Check if session exists and is ongoing
-    session_response = get_study_session(user_id, deck_id, session_id)
-    if session_response.status_code != 200:
-        return session_response.json(), session_response.status_code
-    
-    session = session_response.json().get('study_session')
-    if session.get('end_time') != None:
-        return jsonify({'message': 'Session is already over'}), 400
+        # Check if session exists and is ongoing
+        session_response = get_study_session(user_id, deck_id, session_id)
+        if session_response.status_code != 200:
+            return session_response.json(), session_response.status_code
+        
+        session = session_response.json().get('study_session')
+        if session.get('end_time') != None:
+            return jsonify({'message': 'Session is already over'}), 400
 
-    # Get all flashcards in the deck
-    flashcards_response = get_flashcards(user_id, deck_id)
-    if flashcards_response.status_code == 200:
-        flashcards = flashcards_response.json().get('flashcards')
-    else:
-        return flashcards_response.json(), flashcards_response.status_code
+        # Get all flashcards in the deck
+        flashcards_response = get_flashcards(user_id, deck_id)
+        if flashcards_response.status_code == 200:
+            flashcards = flashcards_response.json().get('flashcards')
+        else:
+            return flashcards_response.json(), flashcards_response.status_code
 
-    # Get the recall probability for each flashcard
-    for flashcard in flashcards:
-        flashcard['recall_probability'] = get_recall_probability(flashcard)
+        # Get the recall probability for each flashcard
+        for flashcard in flashcards:
+            flashcard['recall_probability'] = get_recall_probability(flashcard)
 
-    # Sort the flashcards by recall_probability
-    flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
+        # Sort the flashcards by recall_probability
+        flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
 
-    # Return the flashcard with the lowest recall_probability
-    # return jsonify({
-    #     'question': flashcards[0]['question'],
-    #     'answer': flashcards[0]['answer'],
-    #     'card_id': flashcards[0]['card_id']
-    # }), 200
+        # Return the flashcard with the lowest recall_probability
+        # return jsonify({
+        #     'question': flashcards[0]['question'],
+        #     'answer': flashcards[0]['answer'],
+        #     'card_id': flashcards[0]['card_id']
+        # }), 200
 
-    # For debugging purposes    
-    return jsonify(flashcards[0]), 200
+        # For debugging purposes    
+        return jsonify(flashcards[0]), 200
+
+    except Exception as e:
+        # Log the exception for debugging purposes
+        print(f"Error getting next flashcard: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
