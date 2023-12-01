@@ -2,11 +2,14 @@ import textwrap
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 import requests
+from os import environ
 
 from handlers.deck_manager import *
 
 #URL for the database
 BL_API_BASE_URL = "http://localhost:5000"
+#BL_API_BASE_URL = environ.get('DL_URL')
+
 
 # ---------------------------------------------------------------- #
 # ----------------------  HANDLER COMMANDS  ---------------------- #
@@ -15,19 +18,16 @@ BL_API_BASE_URL = "http://localhost:5000"
 #Handler /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user #telegram account data
-    check_user_endpoint = f"{BL_API_BASE_URL}/check_user"
-    create_user_endpoint = f"{BL_API_BASE_URL}/create_user"
+    
+    create_user_endpoint = f"{BL_API_BASE_URL}/users"
+    create_user_res = requests.post(create_user_endpoint, json={"user_id": int(user.id), "username": str(user.full_name)})
 
     #Check if the user exists
-    check_user_res = requests.get(check_user_endpoint, json={"user_id": user.id})
     welcome_msg=""
 
-    if check_user_res.status_code == 404: #user not found
-        #Create the user using the /create_user endpoint
-        create_user_res = requests.post(create_user_endpoint, json={"user_id": int(user.id), "username": str(user.full_name)})
-
-        if create_user_res.status_code == 201:  #creation done          
-            welcome_msg = textwrap.dedent(
+    if create_user_res.status_code == 201: #user created
+    
+        welcome_msg = textwrap.dedent(
                 f'''
                 🚀 Hello {user.mention_html()}, Welcome to <b>FlashMinds</b>! 🧠
                 Elevate your learning where smart flashcards meet AI magic! 📚✨
@@ -35,14 +35,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 🌟 Key Features:
 
                 1️⃣ Smart Flashcards: Adaptive learning for your progress.
+
                 2️⃣ Dynamic Wording: Varied concepts for deep understanding.
+
                 3️⃣ Telegram Access: Study seamlessly via our intuitive bot.
                 '''
-            )
-        else: #error
-            welcome_msg += f"\nError creating user. Status code: {create_user_res.status_code}"
+            )        
 
-    elif check_user_res.status_code == 200: #user already exist
+    elif create_user_res.status_code == 409: #user already exist
         welcome_msg = textwrap.dedent(
             f'''
             🌟 Welcome back {user.mention_html()}! 🚀
@@ -52,7 +52,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     else: #error
-        welcome_msg = f"Internal error. Status code: {check_user_res.status_code}"
+        welcome_msg = f"Internal error. Status code: {create_user_res.status_code}"
     
 
     await show_keyboard(update, context, welcome_msg)
