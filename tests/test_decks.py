@@ -248,22 +248,6 @@ def test_get_decks_success():
     # Delete the user created for testing
     delete_test_user(user_id)
 
-def test_get_decks_no_decks():
-    # Create a user for testing
-    user_id = create_test_user()
-
-    # Attempt to retrieve decks for the created user
-    get_decks_url = f'{base_url}/users/{user_id}/decks'
-    get_decks_response = requests.get(get_decks_url)
-
-    # Check if the expected 404 response is received
-    assert get_decks_response.status_code == 404
-    assert 'message' in get_decks_response.json()
-    assert get_decks_response.json()['message'] == 'No decks found for the specified user'
-
-    # Delete the user created for testing
-    delete_test_user(user_id)
-
 def test_get_decks_user_not_found():
     # Attempt to retrieve decks for a non-existent user
     non_existent_user_id = fake.random_int(min=200001, max=300000)

@@ -307,8 +307,6 @@ def get_decks(user_id):
         cursor.close()
         connection.close()
         
-        if not decks:
-            return jsonify({'message': 'No decks found for the specified user'}), 404
         return jsonify({'decks': decks}), 200
     except Exception as e:
         # Log the exception for debugging purposes
