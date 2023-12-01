@@ -19,7 +19,7 @@ OCR_API_BASE_URL = "http://localhost:5003"
 # ---------------------------------------------------------------- #
 
 async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📚 I'm ready! Let's create a new Deck. What would you like to name it? \n\n /cancel")
+    await update.message.reply_text("📚 I'm ready! Let's create a new Deck. What would you like to name it? \n\n /cancel", reply_markup=ReplyKeyboardRemove())
     return DECK
 
 #1 ---- set deck name
@@ -259,7 +259,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     msg="🛑 You cancelled the deck creation."
     context.user_data.clear()
-    await show_keyboard(update, context, msg)
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_text(msg, reply_markup=reply_markup)
     return ConversationHandler.END
 
 # ---------------------------------------------------------------- #
@@ -279,7 +280,9 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not decks: #empty list
             msg="👀 No decks are present. You can create one with the command /add"
-            await show_keyboard(update, context, msg)
+            reply_markup = await show_keyboard(update, context)
+            await update.message.reply_text(msg, reply_markup=reply_markup)
+
         else:
             keyboard=[]
 
@@ -332,7 +335,8 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not decks: #empty list
             msg="👀 No decks are present. You can create one with the command /add"
-            await show_keyboard(update, context, msg)
+            reply_markup = await show_keyboard(update, context)
+            await update.message.reply_text(msg, reply_markup=reply_markup)
 
         else:
             msg="🪄 As requested, here's a list of your decks:\n"
@@ -343,7 +347,8 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 flashcard_count = deck.get('flashcard_count')
                 msg += f"\n ➡️ <b>{deck_name}</b> - Cards: {flashcard_count}"
 
-            await show_keyboard(update, context, msg)
+            reply_markup = await show_keyboard(update, context)
+            await update.message.reply_html(msg, reply_markup=reply_markup)
 
     else:  #error
         msg = f"Internal error. Status code: {get_decks_res.status_code}"
@@ -352,15 +357,15 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #
 # ---------------------------------------------------------------- #
-async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE, message):
+async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [KeyboardButton("✨ Start a session ✨")],
         [KeyboardButton("📚 Decks"), KeyboardButton("✚ New Deck"), KeyboardButton("🗑️ Remove")]
     ]
 
     #Store keyboard in the context
-    context.user_data['menu'] = ReplyKeyboardMarkup(keyboard, resize_keyboard= True, one_time_keyboard=True)
-    await update.message.reply_html(text=message, reply_markup=context.user_data['menu'])
+    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True, one_time_keyboard=True)
+    return menu
 
 #menu action call
 async def reply_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -55,8 +55,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: #error
         welcome_msg = f"Internal error. Status code: {create_user_res.status_code}"
     
-
-    await show_keyboard(update, context, welcome_msg)
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=welcome_msg, reply_markup=reply_markup)
     
 #Handler /help command
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,12 +69,14 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         <b>More doubts?</b>
         Contact us on Github: [link]
     ''')
-    await show_keyboard(update, context, help_msg)
+    
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=help_msg, reply_markup=reply_markup)
 
 #Command for unknown or unsupported inputs
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     unknown_msg=textwrap.dedent("🤔 I don't understand. Please use the /help command to see what functionalities I support.")
-    await update.message.reply_html(text=unknown_msg)
-    await show_keyboard(update, context, unknown_msg)
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=unknown_msg, reply_markup=reply_markup)
 
 
