@@ -175,7 +175,10 @@ def get_next_flashcard():
         flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
 
         # Get the flashcard with the lowest recall_probability
-        flashcard = flashcards[0]
+        flashcard = {
+            'question': flashcards[0]['question'],
+            'answer': flashcards[0]['answer']
+        }
 
         if chatgpt:
             # Generate paraphrased flashcard
@@ -188,6 +191,7 @@ def get_next_flashcard():
             # Check the response from the server
             if paraphrase_response.status_code == 200:
                 paraphrased_flashcard = paraphrase_response.json()
+                paraphrased_flashcard['card_id'] = flashcards[0]['card_id']
                 return jsonify(paraphrased_flashcard), 200
 
         # Return the flashcard if paraphrasing is not required or if paraphrasing fails
@@ -205,5 +209,69 @@ def get_next_flashcard():
         print(f"Error getting next flashcard: {e}")
         return jsonify({'message': 'Internal Server Error'}), 500
 
+# Endpoint to start a study session
+@app.route('/start_study_session', methods=['POST'])
+def start_study_session():
+    try:
+        # Retrieve data from the incoming request
+        data = request.get_json()
+        user_id = data.get('user_id')
+        deck_id = data.get('deck_id')
+
+        if user_id is None or deck_id is None:
+            return jsonify({'message': 'Missing required fields'}), 400
+
+        # Create a new study session
+        endpoint = f'/users/{user_id}/decks/{deck_id}/study_sessions'
+        response = requests.post(f'{DL_API_URL}{endpoint}')
+        session_id = response.json().get('session_id')
+        if response.status_code == 200:
+            return jsonify({'message': 'Study session started successfully', 'session_id': session_id}), 200
+        else:
+            return response.json(), response.status_code
+
+    except Exception as e:
+        # Log the exception for debugging purposes
+        print(f"Error starting study session: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
+    
+# Endpoint to end a study session
+@app.route('/end_study_session', methods=['POST'])
+def end_study_session():
+    try:
+        # Retrieve data from the incoming request
+        data = request.get_json()
+        user_id = data.get('user_id')
+        deck_id = data.get('deck_id')
+        session_id = data.get('session_id')
+
+        if user_id is None or deck_id is None or session_id is None:
+            return jsonify({'message': 'Missing required fields'}), 400
+        
+        # Check if session exists and is ongoing
+        session_response = get_study_session(user_id, deck_id, session_id)
+        if session_response.status_code != 200:
+            return session_response.json(), session_response.status_code
+        
+        session = session_response.json().get('study_session')
+        if session.get('end_time') != None:
+            return jsonify({'message': 'Session is already over'}), 400
+
+        # End the study session
+        endpoint = f'/users/{user_id}/decks/{deck_id}/study_sessions/{session_id}'
+        response = requests.put(f'{DL_API_URL}{endpoint}', json={'end_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')})
+        if response.status_code != 200:
+            return response.json(), response.status_code
+        
+        # Return the average confidence for the session
+        average_confidence = session.get('average_confidence')
+        return jsonify({'message': 'Study session ended successfully', 'average_confidence': average_confidence}), 200
+            
+
+    except Exception as e:
+        # Log the exception for debugging purposes
+        print(f"Error ending study session: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)

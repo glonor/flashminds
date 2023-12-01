@@ -150,6 +150,7 @@ def test_get_next_flashcard():
     delete_user_response = requests.delete(delete_user_url)
     assert delete_user_response.status_code == 200
 
+
 def test_get_next_flashcard_with_expired_session():
     # Create a user
     flashcard_id, deck_id, user_id = create_test_flashcard()
@@ -258,6 +259,7 @@ def test_start_study_session_after_session_over():
         "deck_id": deck_id
     }
     start_session_response = requests.post(start_session_url, json=start_session_payload)
+    print(start_session_response.json())
     assert start_session_response.status_code == 201
     session_id = start_session_response.json()['session_id']
 
@@ -280,3 +282,34 @@ def test_start_study_session_after_session_over():
     delete_user_response = requests.delete(delete_user_url)
     assert delete_user_response.status_code == 200
 
+
+def test_get_next_flashcard_with_paraphrasing():
+    # Create a user
+    flashcard_id, deck_id, user_id = create_test_flashcard()
+
+    # Start a study session
+    start_session_url = f'{DL_API_URL}/users/{user_id}/decks/{deck_id}/study_sessions'
+    start_session_response = requests.post(start_session_url)
+    assert start_session_response.status_code == 201
+    session_id = start_session_response.json()['session_id']
+
+    # Get the next flashcard
+    get_next_flashcard_url = f'{base_url}/get_next_flashcard'
+    get_next_flashcard_payload = {
+        "user_id": user_id,
+        "deck_id": deck_id,
+        "session_id": session_id,
+        "chatgpt": True
+    }
+    get_next_flashcard_response = requests.get(get_next_flashcard_url, json=get_next_flashcard_payload)
+
+    # Check the response from the server
+    assert get_next_flashcard_response.status_code == 200
+    assert 'question' in get_next_flashcard_response.json()
+    assert 'answer' in get_next_flashcard_response.json()
+    assert 'card_id' in get_next_flashcard_response.json()
+
+    # Clean up: Delete the user and associated data
+    delete_user_url = f'{DL_API_URL}/users/{user_id}'
+    delete_user_response = requests.delete(delete_user_url)
+    assert delete_user_response.status_code == 200
