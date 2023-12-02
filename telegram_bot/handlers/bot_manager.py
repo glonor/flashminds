@@ -60,18 +60,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 #Handler /help command
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    help_msg=textwrap.dedent('''
-        🆘 <b>Do you need help?</b> 
-        
-        Here, a list for you:
-        - /add | new deck
+    msg = (
+            f"🆘 Do you need help?\n\n"
+            f"- /add : new deck\n"
+            f"- /remove : remove deck\n"
+            f"- /decks : list deck\n"
+            f"- /study : start a session\n\n"
+            f"More doubts? 🧐 Contact us on GitHub"
 
-        <b>More doubts?</b>
-        Contact us on Github: [link]
-    ''')
-    
+    )
+
     reply_markup = await show_keyboard(update, context)
-    await update.message.reply_html(text=help_msg, reply_markup=reply_markup)
+    await update.message.reply_html(text=msg, reply_markup=reply_markup)
 
 #Command for unknown or unsupported inputs
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):

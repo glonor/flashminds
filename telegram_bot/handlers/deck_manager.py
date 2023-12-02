@@ -15,7 +15,7 @@ GPT_API_BASE_URL = "http://localhost:5002"
 OCR_API_BASE_URL = "http://localhost:5003"
 
 # ---------------------------------------------------------------- #
-# ------------------ start HANDLER /ADD COMMAND ------------------ #
+# ---------------------  HANDLER /ADD COMMAND -------------------- #
 # ---------------------------------------------------------------- #
 
 async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -264,7 +264,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 # ---------------------------------------------------------------- #
-# ------------------ start HANDLER /REMOVE COMMAND --------------- #
+# -------------------  HANDLER /REMOVE COMMAND ------------------- #
 # ---------------------------------------------------------------- #
 
 async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -319,7 +319,7 @@ async def remove_deck(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.callback_query.message.edit_text(f"Internal error. Status code: {remove_deck_res.status_code}")
         
 # ---------------------------------------------------------------- #
-# ------------------  start HANDLER /DECKS COMMAND  -------------- #
+# ---------------------  HANDLER /DECKS COMMAND ------------------ #
 # ---------------------------------------------------------------- #
 
 async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -357,6 +357,7 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #
 # ---------------------------------------------------------------- #
+
 async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [KeyboardButton("✨ Start a session ✨")],
@@ -364,22 +365,6 @@ async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
 
     #Store keyboard in the context
-    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True, one_time_keyboard=True)
+    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True)
     return menu
 
-#menu action call
-async def reply_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-
-    #action allowed
-    actions = {
-        "✨ Start a session ✨": decks(update, context),
-        "📚 Decks": decks(update, context),
-        "✚ New Deck": add(update, context),
-        "🗑️ Remove": remove(update, context),
-        "/cancel": cancel(update, context)
-    }
-
-    action_function = actions.get(text)
-    if action_function:
-        await action_function
