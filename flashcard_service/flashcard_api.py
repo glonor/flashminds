@@ -290,15 +290,28 @@ def get_decks(user_id):
         if not user_exists:
             return jsonify({'message': 'User not found'}), 404
 
-        # Retrieve decks and the count of flashcards for the specified user
+        # Retrieve decks and the count of flashcards and the last average confidence of the last study session for each deck for the specified user
         query = """
-            SELECT decks.*, COUNT(flashcards.card_id) AS flashcard_count
-            FROM decks
-            LEFT JOIN flashcards ON decks.deck_id = flashcards.deck_id
-            WHERE decks.user_id = %s
-            GROUP BY decks.deck_id
-            ORDER BY decks.created_at DESC
+           SELECT
+                d.deck_id,
+                d.deck_name,
+                COUNT(f.card_id) AS flashcard_count,
+                IFNULL(MAX(ss.average_confidence), 1) AS last_average_confidence
+            FROM decks d
+            LEFT JOIN flashcards f ON d.deck_id = f.deck_id
+            LEFT JOIN (
+                SELECT
+                    s.deck_id,
+                    s.average_confidence,
+                    MAX(s.end_time) AS last_session_end_time
+                FROM study_sessions s
+                GROUP BY s.deck_id, s.average_confidence
+            ) ss ON d.deck_id = ss.deck_id
+            WHERE d.user_id = %s
+            GROUP BY d.deck_id, d.deck_name
+            ORDER BY d.deck_name;
         """
+
         values = (user_id,)
         cursor.execute(query, values)
         decks = cursor.fetchall()
