@@ -10,7 +10,6 @@ from handlers.deck_manager import *
 BL_API_BASE_URL = "http://localhost:5000"
 #BL_API_BASE_URL = environ.get('DL_URL')
 
-
 # ---------------------------------------------------------------- #
 # ----------------------  HANDLER COMMANDS  ---------------------- #
 # ---------------------------------------------------------------- #

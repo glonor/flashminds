@@ -7,7 +7,6 @@ from io import BytesIO
 
 from handlers.bot_manager import *
 
-
 DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
 
 BL_API_BASE_URL = "http://localhost:5000"
@@ -345,7 +344,10 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 deck_id = deck.get('deck_id')
                 deck_name = deck.get('deck_name')
                 flashcard_count = deck.get('flashcard_count')
-                msg += f"\n ➡️ <b>{deck_name}</b> - Cards: {flashcard_count}"
+                deck_rating = deck.get('last_average_confidence')
+
+
+                msg += f"\n ➡️ <b>{deck_name}</b> - 📚 {flashcard_count} - ⭐️ {deck_rating}"
 
             reply_markup = await show_keyboard(update, context)
             await update.message.reply_html(msg, reply_markup=reply_markup)
