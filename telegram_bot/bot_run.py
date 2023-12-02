@@ -16,9 +16,11 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 from handlers.bot_manager import *
 from handlers.deck_manager import *
+from handlers.study_manager import *
 
 
 DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
+SELECTION, START = range(2)
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -55,6 +57,19 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
+
+    conversation_handler_add = ConversationHandler(
+        entry_points=[
+            CommandHandler('study', study),
+            MessageHandler(filters.Regex("^(✨ Start a session ✨)$"), study)
+        ],
+        states={
+            SELECTION: [CallbackQueryHandler(study_deck_selection, pattern='^study_deck_\d+$')],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+        allow_reentry=True
+    )
+
 
     #Set command /start
     bot.add_handler(CommandHandler('start', start))
