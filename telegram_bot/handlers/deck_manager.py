@@ -346,7 +346,6 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 flashcard_count = deck.get('flashcard_count')
                 deck_rating = deck.get('last_average_confidence')
 
-
                 msg += f"\n ➡️ <b>{deck_name}</b> - 📚 {flashcard_count} - ⭐️ {deck_rating}"
 
             reply_markup = await show_keyboard(update, context)
