@@ -10,7 +10,6 @@ from handlers.deck_manager import *
 BL_API_BASE_URL = "http://localhost:5000"
 #BL_API_BASE_URL = environ.get('DL_URL')
 
-
 # ---------------------------------------------------------------- #
 # ----------------------  HANDLER COMMANDS  ---------------------- #
 # ---------------------------------------------------------------- #
@@ -27,54 +26,56 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if create_user_res.status_code == 201: #user created
     
-        welcome_msg = textwrap.dedent(
-                f'''
-                🚀 Hello {user.mention_html()}, Welcome to <b>FlashMinds</b>! 🧠
-                Elevate your learning where smart flashcards meet AI magic! 📚✨
-
-                🌟 Key Features:
-
-                1️⃣ Smart Flashcards: Adaptive learning for your progress.
-
-                2️⃣ Dynamic Wording: Varied concepts for deep understanding.
-
-                3️⃣ Telegram Access: Study seamlessly via our intuitive bot.
-                '''
-            )        
+        welcome_msg = (
+            f"🚀 Welcome to FlashMindsBot! 🧠\n\n"
+            "Struggling with study sessions? Our bot is here to revolutionize your learning experience! "
+            "Thanks to the power of Machine Learning and our innovative flashcard system, we generate flashcards "
+            "from images and questions/answers provided by you.\n\n"
+            "✨ How it works:\n"
+            "1️⃣ Upload images or input your Q&A.\n"
+            "2️⃣ ML generates personalized flashcards.\n"
+            "3️⃣ Questions are paraphrased in each session.\n"
+            "4️⃣ Evaluate your answers during the session.\n\n"
+            "🔄 Smart Revision:\n"
+            "Our algorithm identifies areas that need review and prioritizes them in subsequent sessions. "
+            "Effortless learning tailored to your needs!\n\n"
+            "📚 Unleash the potential of FlashMindsBot for a smarter study journey. Try it now and boost your academic success! 🌟\n\n"
+        )        
 
     elif create_user_res.status_code == 409: #user already exist
         welcome_msg = textwrap.dedent(
             f'''
             🌟 Welcome back {user.mention_html()}! 🚀
 
-            Embark on another session of enhanced learning with FlashMinds. 🧠✨ We're thrilled to have you back!
+            Ready to dive into another round of effective studying? 🧠✨ We're thrilled to have you back!
             '''
         )
 
     else: #error
         welcome_msg = f"Internal error. Status code: {create_user_res.status_code}"
     
-
-    await show_keyboard(update, context, welcome_msg)
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=welcome_msg, reply_markup=reply_markup)
     
-
 #Handler /help command
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    help_msg=textwrap.dedent('''
-        🆘 <b>Do you need help?</b> 
-        
-        Here, a list for you:
-        - /add | new deck
+    msg = (
+            f"🆘 Do you need help?\n\n"
+            f"- /add : new deck\n"
+            f"- /remove : remove deck\n"
+            f"- /decks : list deck\n"
+            f"- /study : start a session\n\n"
+            f"More doubts? 🧐 Contact us on GitHub"
 
-        <b>More doubts?</b>
-        Contact us on Github: [link]
-    ''')
-    await show_keyboard(update, context, help_msg)
+    )
+
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=msg, reply_markup=reply_markup)
 
 #Command for unknown or unsupported inputs
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     unknown_msg=textwrap.dedent("🤔 I don't understand. Please use the /help command to see what functionalities I support.")
-    await update.message.reply_html(text=unknown_msg)
-    await show_keyboard(update, context, unknown_msg)
+    reply_markup = await show_keyboard(update, context)
+    await update.message.reply_html(text=unknown_msg, reply_markup=reply_markup)
 
 

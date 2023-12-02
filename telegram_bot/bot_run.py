@@ -18,7 +18,7 @@ from handlers.bot_manager import *
 from handlers.deck_manager import *
 
 
-DECK, QUESTION, ANSWER, ADD_ANOTHER = range(4)
+DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -39,31 +39,42 @@ def main():
 
     #Set structure conversation handler /add command
     conversation_handler_add = ConversationHandler(
-        entry_points=[CommandHandler('add', add)],
+        entry_points=[
+            CommandHandler('add', add),
+            MessageHandler(filters.Regex("^(✚ New Deck)$"), add)
+        ],
         states={
             DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
+            INPUT: [CallbackQueryHandler(opt_input, pattern='^(text|pic|finish)$')],
+            IMAGE: [MessageHandler(filters.PHOTO | filters. Document.ALL, get_card_generated)],
+            REGENERATE: [CallbackQueryHandler(regenerate_card, pattern='^(ok|regenerate)$')],
             QUESTION: [MessageHandler(filters.TEXT, set_question)],
             ANSWER: [MessageHandler(filters.TEXT, set_answer)],
-            ADD_ANOTHER: [CallbackQueryHandler(add_another, pattern='^(yes|no)$')]
 
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
 
-    #Set commands handler
-    bot.add_handler(CommandHandler('help', help))
+    #Set command /start
     bot.add_handler(CommandHandler('start', start))
-    bot.add_handler(CommandHandler('remove', remove))
-    bot.add_handler(CommandHandler('decks', decks))
-    bot.add_handler(conversation_handler_add)
 
-    #keyboard handler
+    #Set command /help
+    bot.add_handler(CommandHandler('help', help))
+
+    #Set command /remove
+    bot.add_handler(CommandHandler('remove', remove))
+    bot.add_handler(MessageHandler(filters.Regex("^(🗑️ Remove)$"), remove))
     bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
 
-    #reply menu handler
-    bot.add_handler(MessageHandler(filters.TEXT, reply_menu)) 
-    
+    #Set command /decks
+    bot.add_handler(CommandHandler('decks', decks))
+    bot.add_handler(MessageHandler(filters.Regex("^(📚 Decks)$"), decks))
+
+    #Set conversation_handler /add
+    bot.add_handler(conversation_handler_add)
+
+    #Set unknown command handler
     bot.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     #Run the bot until the user presses Ctrl-C
