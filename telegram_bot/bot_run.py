@@ -20,7 +20,7 @@ from handlers.study_manager import *
 
 
 DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
-SELECTION, START = range(2)
+SELECTION, START, SESSION = range(3)
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -65,6 +65,8 @@ def main():
         ],
         states={
             SELECTION: [CallbackQueryHandler(study_deck_selection, pattern='^study_deck_\d+$')],
+            START: [CallbackQueryHandler(study_gen_option, pattern='^(chatgpt|normal|stop)$')],
+            SESSION: [MessageHandler(filters.TEXT, study_start_session)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True

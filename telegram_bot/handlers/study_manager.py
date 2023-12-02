@@ -10,7 +10,7 @@ from handlers.bot_manager import *
 BL_API_BASE_URL = "http://localhost:5000"
 GPT_API_BASE_URL = "http://localhost:5002"
 
-SELECTION, START = range(2)
+SELECTION, START, SESSION = range(3)
 
 # ---------------------------------------------------------------- #
 # ---------------------  HANDLER /STUDY COMMAND ------------------ #
@@ -67,9 +67,39 @@ async def study_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
     keyboard = [
             [InlineKeyboardButton("Use ChatGPT to generate flashcards", callback_data='chatgpt')],
             [InlineKeyboardButton("Use your own custom flahcards", callback_data='normal')],
+            [InlineKeyboardButton("End study session", callback_data='stop')],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(text="Great choice! Now, let's decide how you'd like to proceed:", reply_markup=reply_markup)   
 
     return START
+
+async def study_gen_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_answer = query.data
+    context.user_data['study_gen_opt'] = user_answer
+
+    if user_answer == 'chatgpt':
+        msg = (
+            "🤖 Fantastic choice! 🚀 \n\n"
+            "Let's harness the power of ChatGPT to create personalized flashcards for you based on the topics in the chosen deck."
+        )
+        await update.callback_query.message.edit_text(msg)
+        return SESSION
+        
+    elif user_answer == 'normal':
+        msg=(
+            "📝 Great choice! Let's go with your custom questions.\n\n"
+        )
+        
+        await update.callback_query.message.edit_text(msg)
+        return SESSION
+    else:
+        result_message="🛑 Study session cancelled."
+        await update.callback_query.message.edit_text(result_message)
+        context.user_data.clear()
+        return ConversationHandler.END #loop exit
+
+async def study_start_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    return
