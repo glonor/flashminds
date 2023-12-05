@@ -54,8 +54,9 @@ async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("📚 I'm ready. Tell me which deck you want to use for the study session.", reply_markup=reply_markup)
 
     else:  #error
+        reply_markup = await show_keyboard(update, context)
         msg = f"Internal error. Status code: {get_decks_res.status_code}"
-        await update.message.reply_html(text=msg)
+        await update.message.reply_html(text=msg, reply_markup=reply_markup)
         context.user_data.clear()
         return ConversationHandler.END #loop exit
 
@@ -144,8 +145,9 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
                 context.user_data['study_session_id'] = session_id 
             
             else: #error
+                reply_markup = await show_keyboard(update, context)
                 msg = f"Internal error. Status code: {start_session_res.status_code}"
-                await update.message.reply_text(text=msg)
+                await update.message.reply_text(text=msg, reply_markup=reply_markup)
                 context.user_data.clear()
                 return ConversationHandler.END #exit
 
@@ -181,8 +183,9 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
             return CARD
             
         else: #error
+            reply_markup = await show_keyboard(update, context)
             msg = f"Internal error. Status code: {next_flashcard_res.status_code}"
-            await update.message.reply_html(text=msg)
+            await update.message.reply_html(text=msg, reply_markup=reply_markup)
             context.user_data.clear()
             return ConversationHandler.END #session exit
 
@@ -190,8 +193,9 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         #check if session id is created
         if(context.user_data['study_session_id'] == ""):
+            reply_markup = await show_keyboard(update, context)
             msg = f"Oh, no study? It'll be for next time. I'll wait for you. 😌"
-            await update.message.reply_html(text=msg)
+            await update.message.reply_html(text=msg, reply_markup=reply_markup)
             context.user_data.clear()
             return ConversationHandler.END #loop exit
         
@@ -211,14 +215,16 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
                 response_data = stop_session_res.json()
                 average_confidence = response_data.get('average_confidence', None) #avg confidence session
 
+                reply_markup = await show_keyboard(update, context)
                 await update.message.reply_text(
-                    text=f"Perfect! Your study session is over. The average score is {average_confidence}. Don't give up, see you next time. 👋🏻")
+                    text=f"Perfect! Your study session is over. The average score is {average_confidence}. Don't give up, see you next time. 👋🏻", reply_markup=reply_markup)
                 context.user_data.clear()
                 return ConversationHandler.END #loop exit
 
             else:
+                reply_markup = await show_keyboard(update, context)
                 msg = f"Internal error. Status code: {stop_session_res.status_code}"
-                await update.message.reply_html(text=msg)
+                await update.message.reply_html(text=msg, reply_markup=reply_markup)
                 context.user_data.clear()
                 return ConversationHandler.END #session exit
 
@@ -296,8 +302,9 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
 
             if rating_session_res.status_code == 404:  #unsuccess
+                reply_markup = await show_keyboard(update, context)
                 msg = f"Internal error. Status code: {rating_session_res.status_code}"
-                await update.message.reply_html(text=msg)
+                await update.message.reply_html(text=msg, reply_markup=reply_markup)
                 context.user_data.clear()
                 return ConversationHandler.END #session exit 
 
@@ -316,4 +323,17 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:  #rating option not valid
         await send_invalid_rating_message()
         return RATING
-    
+
+# ---------------------------------------------------------------- #
+# ---------------------  REPLY KEYBOARD MENU  -------------------- #
+# ---------------------------------------------------------------- #
+
+async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [KeyboardButton("✨ Start a session ✨")],
+        [KeyboardButton("📚 Decks"), KeyboardButton("✚ New Deck"), KeyboardButton("🗑️ Remove")]
+    ]
+
+    #Store keyboard in the context
+    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True)
+    return menu

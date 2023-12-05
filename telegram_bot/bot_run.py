@@ -15,12 +15,15 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKe
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
 
 from handlers.bot_manager import *
-from handlers.deck_manager import *
+
+from handlers.decks_manager import *
 from handlers.study_manager import *
+from handlers.remove_manager import *
+from handlers.add_manager import *
 
 
-DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
-SELECTION, OPTION, START, CARD, RATING = range(5)
+NAME, OPTION, QUESTION, ANSWER, IMAGE, REGENERATE = range(6)  #state - conversation_handler_add
+SELECTION, OPTION, START, CARD, RATING = range(5) #state - conversation_handler_study
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -46,13 +49,12 @@ def main():
             MessageHandler(filters.Regex("^(✚ New Deck)$"), add)
         ],
         states={
-            DECK: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_deck_name)],
-            INPUT: [CallbackQueryHandler(opt_input, pattern='^(text|pic|finish)$')],
-            IMAGE: [MessageHandler(filters.PHOTO | filters. Document.ALL, get_card_generated)],
-            REGENERATE: [CallbackQueryHandler(regenerate_card, pattern='^(ok|regenerate)$')],
-            QUESTION: [MessageHandler(filters.TEXT, set_question)],
-            ANSWER: [MessageHandler(filters.TEXT, set_answer)],
-
+            NAME: [MessageHandler(filters.TEXT, study_add_name)],
+            OPTION: [MessageHandler(filters.TEXT, study_input_opt)],
+            QUESTION: [MessageHandler(filters.TEXT, study_set_question)],
+            ANSWER: [MessageHandler(filters.TEXT, study_set_answer)],
+            IMAGE: [MessageHandler(filters.PHOTO | filters.Document.ALL, study_set_card_from_image)],
+            REGENERATE: [MessageHandler(filters.TEXT, study_regenerate_card_from_image)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True

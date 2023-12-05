@@ -4,11 +4,9 @@ from telegram.ext import ContextTypes
 import requests
 from os import environ
 
-from handlers.deck_manager import *
 
 #URL for the database
 BL_API_BASE_URL = "http://localhost:5000"
-#BL_API_BASE_URL = environ.get('DL_URL')
 
 # ---------------------------------------------------------------- #
 # ----------------------  HANDLER COMMANDS  ---------------------- #
@@ -78,4 +76,16 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = await show_keyboard(update, context)
     await update.message.reply_html(text=unknown_msg, reply_markup=reply_markup)
 
+# ---------------------------------------------------------------- #
+# ---------------------  REPLY KEYBOARD MENU  -------------------- #
+# ---------------------------------------------------------------- #
 
+async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [KeyboardButton("✨ Start a session ✨")],
+        [KeyboardButton("📚 Decks"), KeyboardButton("✚ New Deck"), KeyboardButton("🗑️ Remove")]
+    ]
+
+    #Store keyboard in the context
+    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True)
+    return menu
