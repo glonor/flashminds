@@ -244,11 +244,7 @@ async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if (text == "View answer 👀"):
         keyboard = [
-            [KeyboardButton("⭐️⭐️⭐️⭐️⭐️")], 
-            [KeyboardButton("⭐️⭐️⭐️⭐️")], 
-            [KeyboardButton("⭐️⭐️⭐️")], 
-            [KeyboardButton("⭐️⭐️")], 
-            [KeyboardButton("⭐️")], 
+            [KeyboardButton("⭐️5"), KeyboardButton("⭐️4"), KeyboardButton("⭐️3"), KeyboardButton("⭐️2"), KeyboardButton("⭐️1")], 
         ] #reply rating keyboard
 
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
@@ -276,17 +272,13 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     #invalid message sent to user
     async def send_invalid_rating_message():
         keyboard = [
-            [KeyboardButton("⭐️⭐️⭐️⭐️⭐️")],
-            [KeyboardButton("⭐️⭐️⭐️⭐️")],
-            [KeyboardButton("⭐️⭐️⭐️")],
-            [KeyboardButton("⭐️⭐️")],
-            [KeyboardButton("⭐️")],
+            [KeyboardButton("⭐️5"), KeyboardButton("⭐️4"), KeyboardButton("⭐️3"), KeyboardButton("⭐️2"), KeyboardButton("⭐️1")], 
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text("Rating not valid. Please repeat.", reply_markup=reply_markup)
 
-    if text.startswith("⭐️"):
-        star_count = text.count("⭐️")  #Count the number of stars
+    if text.startswith("⭐️") and len(text) == 3 and text[2].isdigit():
+        star_count = int(text[2])  #Count the number of stars
 
         if is_valid_rating(star_count):
             rating_session_endpoint = f"{SC_API_BASE_URL}/review_flashcard" #rating endpoint
