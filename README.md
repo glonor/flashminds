@@ -2,6 +2,8 @@
 
 FlashMinds revolutionizes the way you learn by combining the simplicity of flashcards with the power of artificial intelligence. In addition to traditional flashcard functionality, FlashMinds employs advanced AI algorithms to enhance your learning experience.
 
+<img title="a title" alt="FlashMinds" src="assets/header.png" width="60%">>
+
 ## Key Features:
 
 - **Smart Flashcards**: Create and study smart flashcards that adapt to your learning progress. FlashMinds intelligently adjusts the scheduling of cards based on your performance, ensuring an optimal learning experience.
