@@ -7,7 +7,7 @@ from io import BytesIO
 
 from handlers.bot_manager import *
 
-DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
+REMOVE = range(1)
 
 BL_API_BASE_URL = "http://localhost:5000"
 GPT_API_BASE_URL = "http://localhost:5002"
@@ -16,57 +16,81 @@ OCR_API_BASE_URL = "http://localhost:5003"
 # ---------------------------------------------------------------- #
 # -------------------  HANDLER /REMOVE COMMAND ------------------- #
 # ---------------------------------------------------------------- #
-
 async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user #telegram user
-    get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks"
+    user = update.effective_user  #telegram user
+    get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks" #decks endpoint
 
-    #user deck list
+    #List of user decks
     get_decks_res = requests.get(get_decks_endpoint, timeout=10)
 
-    if get_decks_res.status_code == 200:  #list deck ok
+    if get_decks_res.status_code == 200:  #success
         response_data = get_decks_res.json()
         decks = response_data.get('decks', [])
 
-        if not decks: #empty list
-            msg="👀 No decks are present. You can create one with the command /add"
+        if not decks:  #empty list
+            msg = "👀 No decks are present. You can create one with the command /add"
             reply_markup = await show_keyboard(update, context)
             await update.message.reply_text(msg, reply_markup=reply_markup)
 
         else:
-            keyboard=[]
+            deck_array = []  #Initialize an array to store decks
+            keyboard = []  #Initialize reply keyboard
 
             for deck in decks:
                 deck_id = deck.get('deck_id')
                 deck_name = deck.get('deck_name')
                 flashcard_count = deck.get('flashcard_count')
 
-                button = InlineKeyboardButton(f"{deck_name} - Cards: {flashcard_count}", callback_data=f"remove_deck_{deck_id}")
-                keyboard.append([button])
+                if flashcard_count >= 1:
+                    button = KeyboardButton(f"{deck_name} [Cards: {flashcard_count}]")
+                    keyboard.append([button])
+                    deck_array.append({'id': deck_id, 'name': deck_name})
 
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            context.user_data['deck_array'] = deck_array
+
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text("🗑️ Choose the deck you want to remove", reply_markup=reply_markup)
-            
 
     else:  #error
+        reply_markup = await show_keyboard(update, context)
         msg = f"Internal error. Status code: {get_decks_res.status_code}"
-        await update.message.reply_html(text=msg)
+        await update.message.reply_html(text=msg, reply_markup=reply_markup)
+        context.user_data.clear()
+        return ConversationHandler.END #loop exit
 
-#1 ---- remove specific deck
-async def remove_deck(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_answer = query.data
-    user = update.effective_user
-    deck_id = int(query.data.split("_")[2])  #ID extraction
+    return REMOVE
 
-    remove_deck_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks/{deck_id}"
-    remove_deck_res = requests.delete(remove_deck_endpoint, timeout=10)
+#2 ---- Deck id check
+async def remove_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user #telegram user
+    deck_name = update.message.text #input user
+    deck_array = context.user_data['deck_array']
 
-    if remove_deck_res.status_code == 200: #success
-        await update.callback_query.message.edit_text("🚮 Deck deleted successfully")
-    
-    else:
-        await update.callback_query.message.edit_text(f"Internal error. Status code: {remove_deck_res.status_code}")
+    #Check if the user input is in the deck_array
+    selected_deck = next((deck for deck in deck_array if deck_name.startswith(deck['name'])), None)
+
+    if selected_deck: #deck present in array
+        context.user_data['remove_deck_id'] = selected_deck['id']
+        remove_deck_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks/{context.user_data['remove_deck_id']}"
+        remove_deck_res = requests.delete(remove_deck_endpoint)
+
+        if remove_deck_res.status_code == 200:  #remove ok
+            response_data = remove_deck_res.json()
+            message="🚮 Deck deleted successfully"
+            reply_markup = await show_keyboard(update, context)
+            await update.message.reply_html(text=message, reply_markup=reply_markup)
+            
+        else: #error
+            reply_markup = await show_keyboard(update, context)
+            msg = f"Internal error. Status code: {remove_deck_res.status_code}"
+            await update.message.reply_html(text=msg, reply_markup=reply_markup)
+            context.user_data.clear()
+            return ConversationHandler.END #session exit
+
+    else: #deck not valid
+        await update.message.reply_text(f"Repeat the choice.")
+        return REMOVE
+
 
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #

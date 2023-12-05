@@ -24,8 +24,8 @@ from handlers.add_manager import *
 
 NAME, OPTION, QUESTION, ANSWER, IMAGE, REGENERATE = range(6)  #state - conversation_handler_add
 SELECTION, OPTION, START, CARD, RATING = range(5) #state - conversation_handler_study
-SELECTION = range(1) #state - conversation_handler_decks
-
+PRINT = range(1) #state - conversation_handler_decks
+REMOVE = range(1) #state - conversation_handler_remove
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -86,7 +86,20 @@ def main():
             MessageHandler(filters.Regex("^(📚 Decks)$"), decks)
         ],
         states={
-            SELECTION: [MessageHandler(filters.TEXT, decks_deck_selection)],
+            PRINT: [MessageHandler(filters.TEXT, decks_deck_selection)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+        allow_reentry=True
+    )
+    
+    #Set structure conversation handler /remove command
+    conversation_handler_remove = ConversationHandler(
+        entry_points=[
+            CommandHandler('remove', remove),
+            MessageHandler(filters.Regex("^(🗑️ Remove)$"), remove)
+        ],
+        states={
+            REMOVE: [MessageHandler(filters.TEXT, remove_deck_selection)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
@@ -98,15 +111,12 @@ def main():
     #Set command /help
     bot.add_handler(CommandHandler('help', help))
 
-    #Set command /remove
-    bot.add_handler(CommandHandler('remove', remove))
-    bot.add_handler(MessageHandler(filters.Regex("^(🗑️ Remove)$"), remove))
-    bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
-
     #Set conversation_handler /add
     bot.add_handler(conversation_handler_add)
     bot.add_handler(conversation_handler_decks)
     bot.add_handler(conversation_handler_study)
+    bot.add_handler(conversation_handler_remove)
+
 
     #Set unknown command handler
     bot.add_handler(MessageHandler(filters.COMMAND, unknown))

@@ -50,7 +50,7 @@ async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             context.user_data['deck_array'] = deck_array
 
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text("📚 I'm ready. Tell me which deck you want to use for the study session.", reply_markup=reply_markup)
 
     else:  #error
@@ -77,7 +77,7 @@ async def study_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
             [KeyboardButton("Yes, use AI")], 
             [KeyboardButton("No, use my cards")]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(
             f"Great choice! You selected the deck: {selected_deck['name']}.\n"
             f"Now decide if you want to use the power of AI during your study session ✨🪄", 
@@ -107,7 +107,7 @@ async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYP
             [KeyboardButton("Yes, use AI")], 
             [KeyboardButton("No, use my cards")]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
         return OPTION
 
@@ -115,7 +115,7 @@ async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYP
         [KeyboardButton("🚥 START")], 
         [KeyboardButton("🏁 STOP")]
     ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
     await update.message.reply_text(f"Buckle up, press START to begin your study session! 📖", reply_markup=reply_markup)
     context.user_data['study_session_id'] = ""
 
@@ -178,7 +178,7 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
                 [KeyboardButton("View answer 👀")],
             ]
                 
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text(text=question, reply_markup=reply_markup)
             return CARD
             
@@ -233,7 +233,7 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
             [KeyboardButton("🚥 START")], 
             [KeyboardButton("🏁 STOP")]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
         return START
 
@@ -251,14 +251,14 @@ async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
             [KeyboardButton("⭐️")], 
         ] #reply rating keyboard
 
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Answer:\n{context.user_data['study_card_answer']}\n\n How do you rate your answer?⭐️:", reply_markup=reply_markup)
         
     else: #option not valid
         keyboard = [
             [KeyboardButton("View answer 👀")], 
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
         return CARD        
     
@@ -282,7 +282,7 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             [KeyboardButton("⭐️⭐️")],
             [KeyboardButton("⭐️")],
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text("Rating not valid. Please repeat.", reply_markup=reply_markup)
 
     if text.startswith("⭐️"):
@@ -312,7 +312,7 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
                 [KeyboardButton("Another one")],
                 [KeyboardButton("🏁 STOP")],
             ]
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text("Rating saved. Now what can I do for you?", reply_markup=reply_markup)
             return START
 

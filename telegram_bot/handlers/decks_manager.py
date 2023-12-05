@@ -11,7 +11,7 @@ BL_API_BASE_URL = "http://localhost:5000"
 SC_API_BASE_URL = "http://localhost:5001"
 GPT_API_BASE_URL = "http://localhost:5002"
 
-SELECTION = range(1) #state - conversation_handler_decks
+PRINT = range(1) #state - conversation_handler_decks
 
 # ---------------------------------------------------------------- #
 # ---------------------  HANDLER /DECKS COMMAND ------------------ #
@@ -49,7 +49,7 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             context.user_data['deck_array'] = deck_array
 
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text("🪄As requested, here is a list of your decks. Select one to see what it contains 👀", reply_markup=reply_markup)
 
     else:  #error
@@ -59,7 +59,7 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.clear()
         return ConversationHandler.END #loop exit
 
-    return SELECTION
+    return PRINT
 
 #2 ---- Deck id check
 async def decks_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -71,9 +71,8 @@ async def decks_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
     selected_deck = next((deck for deck in deck_array if deck_name.startswith(deck['name'])), None)
 
     if selected_deck: #deck present in array
-        #TODO: show card
-        context.user_data['study_deck_id'] = selected_deck['id']
-        get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks/{context.user_data['study_deck_id']}/flashcards" #decks cards
+        context.user_data['decks_deck_id'] = selected_deck['id']
+        get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks/{context.user_data['decks_deck_id']}/flashcards" #decks cards
 
         #List of cards
         get_decks_res = requests.get(
@@ -95,6 +94,8 @@ async def decks_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
 
             reply_markup = await show_keyboard(update, context)
             await update.message.reply_html(text=message, reply_markup=reply_markup)
+            context.user_data.clear()
+            return ConversationHandler.END #session exit
             
         else: #error
             reply_markup = await show_keyboard(update, context)
@@ -105,7 +106,7 @@ async def decks_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
 
     else: #deck not valid
         await update.message.reply_text(f"Repeat the choice.")
-        return SELECTION
+        return PRINT
 
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #

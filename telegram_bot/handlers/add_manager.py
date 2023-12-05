@@ -103,7 +103,7 @@ async def study_input_opt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [KeyboardButton("Write manually ✍️")], 
             [KeyboardButton("Generate from image ✨")]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
         return OPTION
 
@@ -144,7 +144,7 @@ async def study_set_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [KeyboardButton("Generate from image ✨")],
         [KeyboardButton("Finish 🏁")]
     ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
     await update.message.reply_text("Thank you. What would you like to do next?", reply_markup=reply_markup)
     return OPTION
 
@@ -204,7 +204,7 @@ async def study_set_card_from_image(update: Update, context: ContextTypes.DEFAUL
                 [KeyboardButton("♻️ Regenerate")]
             ]
 
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             
             msg = (
                     f"👏 Fantastic! Your flashcard has been created:\n\n"
@@ -260,7 +260,7 @@ async def study_regenerate_card_from_image(update: Update, context: ContextTypes
             [KeyboardButton("Finish 🏁")]
         ]
 
-        reply_markup = ReplyKeyboardMarkup(keyboard)
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard= True, one_time_keyboard=True)
         await update.message.reply_text(text="Thank you. What would you like to do next?", reply_markup=reply_markup)        
         return OPTION
 
@@ -293,7 +293,7 @@ async def study_regenerate_card_from_image(update: Update, context: ContextTypes
                 [KeyboardButton("♻️ Regenerate")]
             ]
 
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text(text=msg, reply_markup=reply_markup)
             return REGENERATE
 
@@ -302,7 +302,7 @@ async def study_regenerate_card_from_image(update: Update, context: ContextTypes
             [KeyboardButton("OK")], 
             [KeyboardButton("♻️ Regenerate")]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
         return REGENERATE
 
@@ -315,20 +315,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = await show_keyboard(update, context)
     await update.message.reply_text(msg, reply_markup=reply_markup)
     return ConversationHandler.END
-
-# ---------------------------------------------------------------- #
-# ---------------------  REPLY KEYBOARD MENU  -------------------- #
-# ---------------------------------------------------------------- #
-
-async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [KeyboardButton("✨ Start a session ✨")],
-        [KeyboardButton("📚 Decks"), KeyboardButton("✚ New Deck"), KeyboardButton("🗑️ Remove")]
-    ]
-
-    #Store keyboard in the context
-    menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True)
-    return menu
 
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #
