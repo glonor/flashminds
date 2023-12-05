@@ -24,6 +24,8 @@ from handlers.add_manager import *
 
 NAME, OPTION, QUESTION, ANSWER, IMAGE, REGENERATE = range(6)  #state - conversation_handler_add
 SELECTION, OPTION, START, CARD, RATING = range(5) #state - conversation_handler_study
+SELECTION = range(1) #state - conversation_handler_decks
+
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -77,6 +79,19 @@ def main():
         allow_reentry=True
     )
 
+    #Set structure conversation handler /decks command
+    conversation_handler_decks = ConversationHandler(
+        entry_points=[
+            CommandHandler('decks', decks),
+            MessageHandler(filters.Regex("^(📚 Decks)$"), decks)
+        ],
+        states={
+            SELECTION: [MessageHandler(filters.TEXT, decks_deck_selection)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+        allow_reentry=True
+    )
+
     #Set command /start
     bot.add_handler(CommandHandler('start', start))
 
@@ -88,12 +103,9 @@ def main():
     bot.add_handler(MessageHandler(filters.Regex("^(🗑️ Remove)$"), remove))
     bot.add_handler(CallbackQueryHandler(remove_deck, pattern='^remove_deck_\d+$'))
 
-    #Set command /decks
-    bot.add_handler(CommandHandler('decks', decks))
-    bot.add_handler(MessageHandler(filters.Regex("^(📚 Decks)$"), decks))
-
     #Set conversation_handler /add
     bot.add_handler(conversation_handler_add)
+    bot.add_handler(conversation_handler_decks)
     bot.add_handler(conversation_handler_study)
 
     #Set unknown command handler
