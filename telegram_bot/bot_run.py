@@ -20,7 +20,7 @@ from handlers.study_manager import *
 
 
 DECK, INPUT, IMAGE, REGENERATE, QUESTION, ANSWER = range(6)
-SELECTION, START, SESSION_OPT, GENERATION, VIEW, RATING, MORE = range(7)
+SELECTION, OPTION, START, CARD, RATING = range(5)
 
 #Load environment variables from the .env file
 load_dotenv()
@@ -58,24 +58,21 @@ def main():
         allow_reentry=True
     )
 
-    conversation_handler_add = ConversationHandler(
+    conversation_handler_study = ConversationHandler(
         entry_points=[
             CommandHandler('study', study),
             MessageHandler(filters.Regex("^(✨ Start a session ✨)$"), study)
         ],
         states={
-            SELECTION: [CallbackQueryHandler(study_deck_selection, pattern='^study_deck_\d+$')],
-            START: [CallbackQueryHandler(study_gen_option, pattern='^(chatgpt|normal|stop)$')],
-            SESSION_OPT: [CallbackQueryHandler(study_session_option, pattern='^(start|stop)$')], #ok
-            GENERATION : [MessageHandler(filters.TEXT, study_card_generation)],
-            VIEW: [CallbackQueryHandler(study_view_answer, pattern='^(view)$')],
-            RATING: [CallbackQueryHandler(study_rating_answer, pattern='^(1|2|3|4|5)$')],
-            MORE: [CallbackQueryHandler(study_more_card, pattern='^(more|stop)$')]
+            SELECTION: [MessageHandler(filters.TEXT, study_deck_selection)],
+            OPTION: [MessageHandler(filters.TEXT, study_session_option)],
+            START: [MessageHandler(filters.TEXT, study_session_start)],
+            CARD: [MessageHandler(filters.TEXT, study_session_card)],
+            RATING: [MessageHandler(filters.TEXT, study_rating_answer)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
-
 
     #Set command /start
     bot.add_handler(CommandHandler('start', start))
@@ -94,6 +91,7 @@ def main():
 
     #Set conversation_handler /add
     bot.add_handler(conversation_handler_add)
+    bot.add_handler(conversation_handler_study)
 
     #Set unknown command handler
     bot.add_handler(MessageHandler(filters.COMMAND, unknown))

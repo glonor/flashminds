@@ -8,33 +8,35 @@ from io import BytesIO
 from handlers.bot_manager import *
 
 BL_API_BASE_URL = "http://localhost:5000"
+SC_API_BASE_URL = "http://localhost:5001"
 GPT_API_BASE_URL = "http://localhost:5002"
 
-SELECTION, START, SESSION_OPT, GENERATION, VIEW, RATING, MORE = range(7)
+SELECTION, OPTION, START, CARD, RATING = range(5) #state - conversation_handler_study
 
 # ---------------------------------------------------------------- #
 # ---------------------  HANDLER /STUDY COMMAND ------------------ #
 # ---------------------------------------------------------------- #
 
-#1 ---- deck choosing
+#1 ---- Deck Selection
 async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user #telegram user
-    get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks"
+    user = update.effective_user  #telegram user
+    get_decks_endpoint = f"{BL_API_BASE_URL}/users/{user.id}/decks" #decks endpoint
 
-    #user deck list
+    #List of user decks
     get_decks_res = requests.get(get_decks_endpoint, timeout=10)
 
-    if get_decks_res.status_code == 200:  #list deck ok
+    if get_decks_res.status_code == 200:  #success
         response_data = get_decks_res.json()
         decks = response_data.get('decks', [])
 
-        if not decks: #empty list
-            msg="👀 No decks are present. You can create one with the command /add"
+        if not decks:  #empty list
+            msg = "👀 No decks are present. You can create one with the command /add"
             reply_markup = await show_keyboard(update, context)
             await update.message.reply_text(msg, reply_markup=reply_markup)
 
         else:
-            keyboard=[]
+            deck_array = []  #Initialize an array to store decks
+            keyboard = []  #Initialize reply keyboard
 
             for deck in decks:
                 deck_id = deck.get('deck_id')
@@ -42,250 +44,276 @@ async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 flashcard_count = deck.get('flashcard_count')
 
                 if flashcard_count >= 1:
-                    button = InlineKeyboardButton(f"{deck_name} - Cards: {flashcard_count}", callback_data=f"study_deck_{deck_id}")
+                    button = KeyboardButton(f"{deck_name} [Cards: {flashcard_count}]")
                     keyboard.append([button])
+                    deck_array.append({'id': deck_id, 'name': deck_name})
 
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text("📚 Welcome to the Study Section!\n\nLet's dive into the world of knowledge and enhance your learning.\nTo get started, please choose a deck to study:", reply_markup=reply_markup)
-            
+            context.user_data['deck_array'] = deck_array
+
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            await update.message.reply_text("📚 I'm ready. Tell me which deck you want to use for the study session.", reply_markup=reply_markup)
+
     else:  #error
         msg = f"Internal error. Status code: {get_decks_res.status_code}"
         await update.message.reply_html(text=msg)
-        return 
-    
+        context.user_data.clear()
+        return ConversationHandler.END #loop exit
+
     return SELECTION
 
-#2 ---- #chatgpt or normal
+#2 ---- Deck id check
 async def study_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_answer = query.data
-    user = update.effective_user
-    deck_id = int(query.data.split("_")[2])  #ID extraction
+    user = update.effective_user #telegram user
+    deck_name = update.message.text #input user
+    deck_array = context.user_data['deck_array']
+
+    #Check if the user input is in the deck_array
+    selected_deck = next((deck for deck in deck_array if deck_name.startswith(deck['name'])), None)
+
+    if selected_deck: #deck present in array
+        context.user_data['study_deck_id'] = selected_deck['id']
+        keyboard = [
+            [KeyboardButton("Yes, use AI")], 
+            [KeyboardButton("No, use my cards")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text(
+            f"Great choice! You selected the deck: {selected_deck['name']}.\n"
+            f"Now decide if you want to use the power of AI during your study session ✨🪄", 
+            reply_markup=reply_markup
+        )
+
+    else: #deck not valid
+        await update.message.reply_text(f"Repeat the choice.")
+        return SELECTION
     
-    context.user_data['study_deck_id'] = deck_id
+    return OPTION
+
+#3 ---- Chatgpt or Normal selection
+async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user #telegram user
+    option = update.message.text #input user
+
+    #save user decision
+    if option == "Yes, use AI": 
+        context.user_data['study_gen_opt'] = True
+
+    elif option == "No, use my cards":
+        context.user_data['study_gen_opt'] = False
+
+    else: #option not valid, repeat
+        keyboard = [
+            [KeyboardButton("Yes, use AI")], 
+            [KeyboardButton("No, use my cards")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
+        return OPTION
 
     keyboard = [
-            [InlineKeyboardButton("Use ChatGPT to generate flashcards", callback_data='chatgpt')],
-            [InlineKeyboardButton("Use your own custom flahcards", callback_data='normal')],
-            [InlineKeyboardButton("End study session", callback_data='stop')],
+        [KeyboardButton("🚥 START")], 
+        [KeyboardButton("🏁 STOP")]
     ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text="Great choice! Now, let's decide how you'd like to proceed:", reply_markup=reply_markup)   
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+    await update.message.reply_text(f"Buckle up, press START to begin your study session! 📖", reply_markup=reply_markup)
+    context.user_data['study_session_id'] = ""
 
     return START
 
-#3 ---- #start
-async def study_gen_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_answer = query.data
-    
-    if user_answer == 'chatgpt':
-        context.user_data['study_gen_opt'] = True
-
-    elif user_answer == 'normal':
-        context.user_data['study_gen_opt'] = False
-
-    else:
-        result_message="🛑 Study session cancelled."
-        await update.callback_query.message.edit_text(result_message)
-        context.user_data.clear()
-        return ConversationHandler.END #loop exit
-
-    keyboard = [
-            [InlineKeyboardButton("START SESSION", callback_data='start')],
-            [InlineKeyboardButton("End", callback_data='stop')]
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text="📝 Great choice! Come on, click START 🤩", reply_markup=reply_markup)   
-
-    return SESSION_OPT
-    
-
-async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#4 ---- Start Study Session | Another Card
+async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user #telegram user
-    query = update.callback_query
-    user_answer = query.data
+    option = update.message.text #input user
 
-    start_session_endpoint = f"{BL_API_BASE_URL}/start_study_session"
-    
-    if user_answer == 'start':
-        start_session_res = requests.post(
-            start_session_endpoint, 
-            json={
-                "user_id": user.id, 
-                "deck_id": context.user_data['study_deck_id'], 
-            }
-        )
-        
-        if start_session_res.status_code == 201:  #session created
-            response_data = start_session_res.json()
-            session_id = response_data.get('session_id', None)
-            context.user_data['session_id'] = session_id
-            return GENERATION
+    if option == "🚥 START" or option == "Another one": 
+
+        #check if session id is created
+        if not context.user_data['study_session_id']:
+            start_session_endpoint = f"{SC_API_BASE_URL}/start_study_session" #session endpoint
+            start_session_res = requests.post(
+                start_session_endpoint, 
+                json={
+                    "user_id": user.id, 
+                    "deck_id": int(context.user_data['study_deck_id']) #deck_id
+                }
+            )
+
+            if start_session_res.status_code == 201: #session created
+                response_data = start_session_res.json()
+                session_id = response_data.get('session_id', None)
+                context.user_data['study_session_id'] = session_id 
             
-        else:
-            msg = f"Internal error. Status code: {start_session_res.status_code}"
-            await update.message.reply_html(text=msg)
-            context.user_data.clear()
-            return ConversationHandler.END #session exit
-        
-    else:
-        result_message="🛑 Study session cancelled."
-        await update.callback_query.message.edit_text(result_message)
-        context.user_data.clear()
-        return ConversationHandler.END #loop exit
+            else: #error
+                msg = f"Internal error. Status code: {start_session_res.status_code}"
+                await update.message.reply_text(text=msg)
+                context.user_data.clear()
+                return ConversationHandler.END #exit
 
-async def study_card_generation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user #telegram user
-    
-    next_flashcard_endpoint = f"{BL_API_BASE_URL}/get_next_flashcard"
-    next_flashcard_res = requests.post(next_flashcard_endpoint, 
-        json={
-            "user_id": user.id, 
-            "deck_id": context.user_data['study_deck_id'], 
-            "session": context.user_data['session_id'],
-            "chatgpt": context.user_data['study_gen_opt']
-        }
-    )
-
-    if next_flashcard_res.status_code == 200:  #deck created
-        response_data = next_flashcard_res.json()
-
-        card_id = response_data.get('card_id', None)
-        context.user_data['card_id'] = deck_id    
-        answer = response_data.get('answer', None)
-        context.user_data['answer'] = answer
-        
-        question = response_data.get('question', None)
-
-        keyboard = [
-                [
-                    InlineKeyboardButton("View answer 👀", callback_data='answer')
-                ]
-            ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(text=question, reply_markup=reply_markup)
-        return VIEW
-
-    else:
-        msg = f"Internal error. Status code: {create_endpoint_res.status_code}"
-        await update.message.reply_html(text=msg)
-        context.user_data.clear()
-        return ConversationHandler.END #session exit
-
-async def study_view_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user  #telegram user
-    query = update.callback_query
-    user_answer = query.data
-
-    if user_answer == 'view':
-        keyboard = [
-            [
-                InlineKeyboardButton("1", callback_data='1'),
-                InlineKeyboardButton("2", callback_data='2'),
-                InlineKeyboardButton("3", callback_data='3'),
-                InlineKeyboardButton("4", callback_data='4'),
-                InlineKeyboardButton("5", callback_data='5')
-            ]
-        ]
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=context.user_data['answer'], reply_markup=reply_markup)
-        return RATING 
-    else:
-        result_message="🛑 Internal error."
-        await update.callback_query.message.edit_text(result_message)
-        context.user_data.clear()
-        return ConversationHandler.END #loop exit
-
-async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_answer = int(query.data)
-
-    if 1 <= user_answer <= 5: 
-        rating_flashcard_endpoint = f"{BL_API_BASE_URL}/review_flashcard"
-        rating_flashcard_res = requests.post(rating_flashcard_endpoint, 
+        #generate flashcard
+        next_flashcard_endpoint = f"{SC_API_BASE_URL}/get_next_flashcard" #flashcard endpoint
+        next_flashcard_res = requests.get(
+            next_flashcard_endpoint, 
             json={
                 "user_id": user.id, 
                 "deck_id": context.user_data['study_deck_id'], 
-                "card_id": context.user_data['card_id'], 
-                "session": context.user_data['session_id'],
-                "confidence": user_answer
+                "session_id": context.user_data['study_session_id'],
+                "chatgpt": context.user_data['study_gen_opt'] #boolean
             }
         )
-
-        if rating_flashcard_res.status_code == 200:  #rating ok
-                response_data = rating_flashcard_res.json()
-
-                keyboard = [
-                        [InlineKeyboardButton("Another one", callback_data='more')],
-                        [InlineKeyboardButton("Stop", callback_data='stop')],
-                    ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.message.reply_text(text="Flashcard reviewed successfully. Now?", reply_markup=reply_markup)
-                return MORE
-
-        else:
-            msg = f"Internal error. Status code: {rating_flashcard_res.status_code}"
+   
+        if next_flashcard_res.status_code == 200:  #flashcard ok
+            response_data = next_flashcard_res.json()
+            #card_id
+            card_id = response_data.get('card_id', None)
+            context.user_data['study_card_id'] = card_id 
+            #question
+            question = response_data.get('question', None)
+            #answer 
+            answer = response_data.get('answer', None)
+            context.user_data['study_card_answer'] = answer
+                
+            keyboard = [
+                [KeyboardButton("View answer 👀")],
+            ]
+                
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            await update.message.reply_text(text=question, reply_markup=reply_markup)
+            return CARD
+            
+        else: #error
+            msg = f"Internal error. Status code: {next_flashcard_res.status_code}"
             await update.message.reply_html(text=msg)
             context.user_data.clear()
             return ConversationHandler.END #session exit
 
+    elif option == "🏁 STOP":
+        
+        #check if session id is created
+        if(context.user_data['study_session_id'] == ""):
+            msg = f"Oh, no study? It'll be for next time. I'll wait for you. 😌"
+            await update.message.reply_html(text=msg)
+            context.user_data.clear()
+            return ConversationHandler.END #loop exit
+        
+        else: #session_id exist
 
-    else:
-        result_message="🛑 Internal error."
-        await update.callback_query.message.edit_text(result_message)
-        context.user_data.clear()
-        return ConversationHandler.END #loop exit
+            stop_session_endpoint = f"{SC_API_BASE_URL}/end_study_session" #session endpoint
+            stop_session_res = requests.post(
+                stop_session_endpoint, 
+                json={
+                    "user_id": user.id, 
+                    "deck_id": context.user_data['study_deck_id'], 
+                    "session_id": context.user_data['study_session_id'],
+                }
+            )
 
-async def study_more_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_answer = int(query.data)
-
-    if user_answer == 'more':
-        return GENERATION
-
-    else:
-        stop_session_endpoint = f"{BL_API_BASE_URL}/end_study_session"
-        stop_session_res = requests.post(
-            create_session_endpoint, 
-            json={
-                "user_id": user.id, 
-                "deck_id": context.user_data['study_deck_id'], 
-                "session": context.user_data['session_id'],
-            }
-        )
-
-        if stop_session_res.status_code == 200:  #rating ok
+            if stop_session_res.status_code == 200:  #session stop ok
                 response_data = stop_session_res.json()
-                await update.message.reply_text(text="🛑 Study session done.")
-                await update.callback_query.message.edit_text(result_message)
+                average_confidence = response_data.get('average_confidence', None) #avg confidence session
+
+                await update.message.reply_text(
+                    text=f"Perfect! Your study session is over. The average score is {average_confidence}. Don't give up, see you next time. 👋🏻")
                 context.user_data.clear()
                 return ConversationHandler.END #loop exit
 
-        else:
-            msg = f"Internal error. Status code: {rating_flashcard_res.status_code}"
-            await update.message.reply_html(text=msg)
-            context.user_data.clear()
-            return ConversationHandler.END #session exit
+            else:
+                msg = f"Internal error. Status code: {stop_session_res.status_code}"
+                await update.message.reply_html(text=msg)
+                context.user_data.clear()
+                return ConversationHandler.END #session exit
 
-       
+    else: #option not valid
+        keyboard = [
+            [KeyboardButton("🚥 START")], 
+            [KeyboardButton("🏁 STOP")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
+        return START
 
+#5 ---- View Answer Card 
+async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user #telegram user
+    text = update.message.text #input user
 
+    if (text == "View answer 👀"):
+        keyboard = [
+            [KeyboardButton("⭐️⭐️⭐️⭐️⭐️")], 
+            [KeyboardButton("⭐️⭐️⭐️⭐️")], 
+            [KeyboardButton("⭐️⭐️⭐️")], 
+            [KeyboardButton("⭐️⭐️")], 
+            [KeyboardButton("⭐️")], 
+        ] #reply rating keyboard
 
-
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text(f"Answer:\n{context.user_data['study_card_answer']}\n\n How do you rate your answer?⭐️:", reply_markup=reply_markup)
         
-        if create_endpoint_res.status_code == 201:  #session created
-            response_data = create_endpoint_res.json()
-            session_id = response_data.get('session_id', None)
-            context.user_data['session_id'] = session_id
-            return GENERATION
-            
+    else: #option not valid
+        keyboard = [
+            [KeyboardButton("View answer 👀")], 
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
+        return CARD        
+    
+    return RATING
+
+#6 ---- Rating Card | Call Another Card | Stop
+async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user #telegram user
+    text = update.message.text #input user
+
+    #function to check that stars are between 1 and 5
+    def is_valid_rating(star_count):
+        return 1 <= star_count <= 5
+
+    #invalid message sent to user
+    async def send_invalid_rating_message():
+        keyboard = [
+            [KeyboardButton("⭐️⭐️⭐️⭐️⭐️")],
+            [KeyboardButton("⭐️⭐️⭐️⭐️")],
+            [KeyboardButton("⭐️⭐️⭐️")],
+            [KeyboardButton("⭐️⭐️")],
+            [KeyboardButton("⭐️")],
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        await update.message.reply_text("Rating not valid. Please repeat.", reply_markup=reply_markup)
+
+    if text.startswith("⭐️"):
+        star_count = text.count("⭐️")  #Count the number of stars
+
+        if is_valid_rating(star_count):
+            rating_session_endpoint = f"{SC_API_BASE_URL}/review_flashcard" #rating endpoint
+            rating_session_res = requests.post(
+                rating_session_endpoint, 
+                json={
+                    "user_id": user.id, 
+                    "deck_id": context.user_data['study_deck_id'], 
+                    "session": context.user_data['study_session_id'],
+                    "card_id": context.user_data['study_card_id'],
+                    "confidence": star_count #number of stars
+                }
+            )
+
+            if rating_session_res.status_code == 404:  #unsuccess
+                msg = f"Internal error. Status code: {rating_session_res.status_code}"
+                await update.message.reply_html(text=msg)
+                context.user_data.clear()
+                return ConversationHandler.END #session exit 
+
+            keyboard = [
+                [KeyboardButton("Another one")],
+                [KeyboardButton("🏁 STOP")],
+            ]
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+            await update.message.reply_text("Rating saved. Now what can I do for you?", reply_markup=reply_markup)
+            return START
+
         else:
-            msg = f"Internal error. Status code: {create_endpoint_res.status_code}"
-            await update.message.reply_html(text=msg)
-            context.user_data.clear()
-            return ConversationHandler.END #session exit
-        
+            await send_invalid_rating_message()
+            return RATING
+
+    else:  #rating option not valid
+        await send_invalid_rating_message()
+        return RATING
+    
