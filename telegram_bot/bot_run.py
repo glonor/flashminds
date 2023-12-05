@@ -57,7 +57,8 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
     )
-
+    
+    #Set structure conversation handler /study command
     conversation_handler_study = ConversationHandler(
         entry_points=[
             CommandHandler('study', study),
