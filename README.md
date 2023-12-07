@@ -41,10 +41,10 @@ Access your study materials anytime, anywhere with the convenience of Telegram. 
 
 ## Documentation
 Explore and test the API using our Postman Collections:
-- [CHAT GPT API](https://documenter.getpostman.com/view/31304624/2s9YeN3Uz2)
-- [FLASHCARD API](https://documenter.getpostman.com/view/31304624/2s9YeN3V4K)
+- [GPT API](https://documenter.getpostman.com/view/31304624/2s9YeN3Uz2)
+- [Flashcard API](https://documenter.getpostman.com/view/31304624/2s9YeN3V4K)
 - [OCR API](https://documenter.getpostman.com/view/31304624/2s9YeN3V4M)
-- [SCHEDULER API](https://documenter.getpostman.com/view/31304624/2s9YeN3V4N)
+- [Scheduler API](https://documenter.getpostman.com/view/31304624/2s9YeN3V4N)
 
 These collections includes pre-configured requests for various endpoints, making it easier to interact with the APIs.
 
