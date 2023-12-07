@@ -5,7 +5,7 @@
   <img src="./assets/logo.jpeg" width="250px" height="250px">
 </p>
 
-FlashMinds revolutionizes the way you learn by combining the simplicity of flashcards with the power of artificial intelligence. In addition to traditional flashcard functionality, FlashMinds employs advanced AI algorithms to enhance your learning experience.
+🚀 FlashMinds revolutionizes the way you learn by combining the simplicity of flashcards with the power of artificial intelligence. In addition to traditional flashcard functionality, FlashMinds employs advanced AI algorithms to enhance your learning experience.
 
 [gif]
 
@@ -23,19 +23,19 @@ FlashMinds revolutionizes the way you learn by combining the simplicity of flash
 
 Welcome to FlashMinds, where learning meets innovation! Our Telegram Bot redefines the learning experience by seamlessly integrating the simplicity of flashcards with the transformative power of artificial intelligence. Explore a new dimension of learning with these features:
 
-1. **Smart Flashcards** <br>
+- 📚 **Smart Flashcards**  <br>
 Create flashcards effortlessly using our innovative generator. Simply send an image containing text to the bot, and it will generate a question-answer pair based on the image content. Alternatively, you can manually input questions and answers. 
 
-2. **AI-Powered** <br>
+- ✨ **AI-Powered**  <br>
 Leverage advanced AI algorithms that analyze your progress and suggest tailored study materials. In study mode, FlashMinds utilizes ChatGPT to dynamically generate questions based on your saved card. This ensures varied questions while covering the same material, providing a diverse learning experience. Additionally, our algorithm identifies questions that students typically find challenging at the beginning of a session, helping you focus on areas that need attention.
 
-- **Interactive Quizzes** <br>
+- 🧑‍🎓**Interactive Quizzes**  <br>
  In study mode, students can view a question, reveal the answer, and self-assess their response. This interactive process enhances the learning experience, allowing for immediate reflection and improvement.
 
-- **Progress Tracking** <br>
+- ⭐️ **Progress Tracking** <br> 
 Keep tabs on your learning journey. FlashMinds provides insights into your progress, helping you identify strengths and areas for improvement.
 
-- **Cross-Platform Accessibility** <br>
+- 📱 **Cross-Platform Accessibility** <br> 
 Access your study materials anytime, anywhere with the convenience of Telegram. FlashMinds is accessible through any Telegram app, whether on mobile or desktop. Seamlessly pick up where you left off and continue your learning journey effortlessly.
 
 
@@ -66,7 +66,7 @@ git clone https://github.com/glonor/flashminds
 cd flashminds
 ```
 
-1. Create a .env file in the project root and configure these variables:
+2. Create a .env file in the project root and configure these variables:
 ```
 #Telegram Bot
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
@@ -77,13 +77,13 @@ CHATGPT_API_KEY=your_chatgpt_api_key_here
 
 Make sure not to share or commit your .env file to keep your sensitive information private. 
 
-2. Build and run the project using Docker Compose.
+3. Build and run the project using Docker Compose.
 ```bash
 docker-compose up --build
 ```
 This command will build the Docker images and start the containers based on the configuration in the docker-compose.yml file.
 
-3. Access your Telegram Bot.
+4. Access your Telegram Bot.
 Once the containers are running, you can access your FlashMindsBot via Telegram.
 
 
