@@ -7,9 +7,10 @@ from io import BytesIO
 
 from handlers.bot_manager import *
 
-BL_API_BASE_URL = "http://localhost:5000"
-SC_API_BASE_URL = "http://localhost:5001"
-GPT_API_BASE_URL = "http://localhost:5002"
+BL_API_BASE_URL = os.environ.get('DL_URL')
+SC_API_BASE_URL = os.environ.get('SCHEDULER_URL')
+GPT_API_BASE_URL = os.environ.get('CHATGPT_URL')
+OCR_API_BASE_URL = os.environ.get('OCR_URL')
 
 PRINT = range(1) #state - conversation_handler_decks
 

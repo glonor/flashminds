@@ -6,7 +6,10 @@ from os import environ
 
 
 #URL for the database
-BL_API_BASE_URL = "http://localhost:5000"
+BL_API_BASE_URL = os.environ.get('DL_URL')
+SC_API_BASE_URL = os.environ.get('SCHEDULER_URL')
+GPT_API_BASE_URL = os.environ.get('CHATGPT_URL')
+OCR_API_BASE_URL = os.environ.get('OCR_URL')
 
 # ---------------------------------------------------------------- #
 # ----------------------  HANDLER COMMANDS  ---------------------- #
