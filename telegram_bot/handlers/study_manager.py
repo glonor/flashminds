@@ -126,7 +126,7 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.effective_user #telegram user
     option = update.message.text #input user
 
-    if option == "🚥 START" or option == "Another one": 
+    if option == "🚥 START": 
 
         #check if session id is created
         if not context.user_data['study_session_id']:
@@ -151,34 +151,9 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
                 context.user_data.clear()
                 return ConversationHandler.END #exit
 
-        #generate flashcard
-        next_flashcard_endpoint = f"{SC_API_BASE_URL}/get_next_flashcard" #flashcard endpoint
-        next_flashcard_res = requests.get(
-            next_flashcard_endpoint, 
-            json={
-                "user_id": user.id, 
-                "deck_id": context.user_data['study_deck_id'], 
-                "session_id": context.user_data['study_session_id'],
-                "chatgpt": context.user_data['study_gen_opt'] #boolean
-            }
-        )
-   
-        if next_flashcard_res.status_code == 200:  #flashcard ok
-            response_data = next_flashcard_res.json()
-            #card_id
-            card_id = response_data.get('card_id', None)
-            context.user_data['study_card_id'] = card_id 
-            #question
-            question = response_data.get('question', None)
-            #answer 
-            answer = response_data.get('answer', None)
+            reply_markup, question, answer, card_id = await generate_flashcard(Update, context, user)
             context.user_data['study_card_answer'] = answer
-                
-            keyboard = [
-                [KeyboardButton("View answer 👀")],
-            ]
-                
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
+            context.user_data['study_card_id'] = card_id 
             await update.message.reply_text(text=question, reply_markup=reply_markup)
             return CARD
             
@@ -191,42 +166,12 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     elif option == "🏁 STOP":
         
-        #check if session id is created
-        if(context.user_data['study_session_id'] == ""):
-            reply_markup = await show_keyboard(update, context)
-            msg = f"Oh, no study? It'll be for next time. I'll wait for you. 😌"
-            await update.message.reply_html(text=msg, reply_markup=reply_markup)
-            context.user_data.clear()
-            return ConversationHandler.END #loop exit
-        
-        else: #session_id exist
+        msg = await stop_session(Update, context, user)
+        reply_markup = await show_keyboard(update, context)
 
-            stop_session_endpoint = f"{SC_API_BASE_URL}/end_study_session" #session endpoint
-            stop_session_res = requests.post(
-                stop_session_endpoint, 
-                json={
-                    "user_id": user.id, 
-                    "deck_id": context.user_data['study_deck_id'], 
-                    "session_id": context.user_data['study_session_id'],
-                }
-            )
-
-            if stop_session_res.status_code == 200:  #session stop ok
-                response_data = stop_session_res.json()
-                average_confidence = response_data.get('average_confidence', None) #avg confidence session
-
-                reply_markup = await show_keyboard(update, context)
-                await update.message.reply_text(
-                    text=f"Perfect! Your study session is over. The average score is {average_confidence}. Don't give up, see you next time. 👋🏻", reply_markup=reply_markup)
-                context.user_data.clear()
-                return ConversationHandler.END #loop exit
-
-            else:
-                reply_markup = await show_keyboard(update, context)
-                msg = f"Internal error. Status code: {stop_session_res.status_code}"
-                await update.message.reply_html(text=msg, reply_markup=reply_markup)
-                context.user_data.clear()
-                return ConversationHandler.END #session exit
+        await update.message.reply_html(text=msg, reply_markup=reply_markup)
+        context.user_data.clear()
+        return ConversationHandler.END #loop exit
 
     else: #option not valid
         keyboard = [
@@ -249,10 +194,18 @@ async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Answer:\n{context.user_data['study_card_answer']}\n\n How do you rate your answer?⭐️:", reply_markup=reply_markup)
-        
+
+    elif (text == "STOP"):
+        msg = await stop_session(Update, context, user)
+        reply_markup = await show_keyboard(update, context)
+        await update.message.reply_html(text=msg, reply_markup=reply_markup)
+        context.user_data.clear()
+        return ConversationHandler.END #loop exit
+
     else: #option not valid
         keyboard = [
             [KeyboardButton("View answer 👀")], 
+            [KeyboardButton("STOP")],
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text(f"Repeat the choice.", reply_markup=reply_markup)
@@ -287,26 +240,24 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
                 json={
                     "user_id": user.id, 
                     "deck_id": context.user_data['study_deck_id'], 
-                    "session": context.user_data['study_session_id'],
+                    "session_id": context.user_data['study_session_id'],
                     "card_id": context.user_data['study_card_id'],
-                    "confidence": star_count #number of stars
+                    "confidence": int(star_count) #number of stars
                 }
             )
 
-            if rating_session_res.status_code == 404:  #unsuccess
+            if rating_session_res.status_code == 400:  #unsuccess
                 reply_markup = await show_keyboard(update, context)
                 msg = f"Internal error. Status code: {rating_session_res.status_code}"
                 await update.message.reply_html(text=msg, reply_markup=reply_markup)
                 context.user_data.clear()
                 return ConversationHandler.END #session exit 
 
-            keyboard = [
-                [KeyboardButton("Another one")],
-                [KeyboardButton("🏁 STOP")],
-            ]
-            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
-            await update.message.reply_text("Rating saved. Now what can I do for you?", reply_markup=reply_markup)
-            return START
+            reply_markup, question, answer, card_id = await generate_flashcard(Update, context, user)
+            context.user_data['study_card_answer'] = answer
+            context.user_data['study_card_id'] = card_id 
+            await update.message.reply_text(text=question, reply_markup=reply_markup)
+            return CARD
 
         else:
             await send_invalid_rating_message()
@@ -315,6 +266,69 @@ async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:  #rating option not valid
         await send_invalid_rating_message()
         return RATING
+
+#h ---- Function Card Generation
+async def generate_flashcard(update: Update, context: ContextTypes.DEFAULT_TYPE, user):
+    #generate flashcard
+    next_flashcard_endpoint = f"{SC_API_BASE_URL}/get_next_flashcard" #flashcard endpoint
+    next_flashcard_res = requests.get(
+        next_flashcard_endpoint, 
+        json={
+            "user_id": user.id, 
+            "deck_id": context.user_data['study_deck_id'], 
+            "session_id": context.user_data['study_session_id'],
+            "chatgpt": context.user_data['study_gen_opt'] #boolean
+        }
+    )   
+   
+    if next_flashcard_res.status_code == 200:  #flashcard ok
+        response_data = next_flashcard_res.json()
+        #card_id
+        card_id = response_data.get('card_id', None)
+        #question
+        question = response_data.get('question', None)
+        #answer 
+        answer = response_data.get('answer', None)
+                
+        keyboard = [
+            [KeyboardButton("View answer 👀")],
+            [KeyboardButton("STOP")],
+        ]
+                
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
+        return reply_markup, question, answer, card_id
+
+#h ---- Function Stop Session
+async def stop_session(update: Update, context: ContextTypes.DEFAULT_TYPE, user):
+    #check if session id is created
+    if(context.user_data['study_session_id'] == ""):
+        reply_markup = await show_keyboard(update, context)
+        msg = f"Oh, no study? It'll be for next time. I'll wait for you. 😌"
+        return msg
+    
+    else: #session_id exist
+
+        stop_session_endpoint = f"{SC_API_BASE_URL}/end_study_session" #session endpoint
+        stop_session_res = requests.post(
+            stop_session_endpoint, 
+            json={
+                "user_id": user.id, 
+                "deck_id": context.user_data['study_deck_id'], 
+                "session_id": context.user_data['study_session_id'],
+            }
+        )
+
+        if stop_session_res.status_code == 200:  #session stop ok
+            response_data = stop_session_res.json()
+            average_confidence = response_data.get('average_confidence') #avg confidence session
+
+            msg = f"Perfect! Your study session is over. The average score is {average_confidence} ⭐️. Don't give up, see you next time. 👋🏻"
+            return msg
+
+        else:
+            reply_markup = await show_keyboard(update, context)
+            msg = f"Internal error. Status code: {stop_session_res.status_code}"
+            return msg
 
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #
@@ -329,3 +343,4 @@ async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #Store keyboard in the context
     menu = ReplyKeyboardMarkup(keyboard, resize_keyboard= True)
     return menu
+
