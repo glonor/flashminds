@@ -2,7 +2,7 @@
   <h1 align="center">FlashMindsBot</h2>
 
 <p align="center">
-  <img src="./assets/logo.jpeg" width="250px" height="250px">
+  <img src="./assets/logo.png" width="250px" height="250px">
 </p>
 
 🚀 FlashMinds revolutionizes the way you learn by combining the simplicity of flashcards with the power of artificial intelligence. In addition to traditional flashcard functionality, FlashMinds employs advanced AI algorithms to enhance your learning experience.
