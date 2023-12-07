@@ -41,9 +41,10 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 deck_id = deck.get('deck_id')
                 deck_name = deck.get('deck_name')
                 flashcard_count = deck.get('flashcard_count')
+                last_average_confidence = deck.get('last_average_confidence')
 
                 if flashcard_count >= 1:
-                    button = KeyboardButton(f"{deck_name} [Cards: {flashcard_count}]")
+                    button = KeyboardButton(f"{deck_name} - {flashcard_count} cards, {(last_average_confidence-1)/4*100}%")
                     keyboard.append([button])
                     deck_array.append({'id': deck_id, 'name': deck_name})
 

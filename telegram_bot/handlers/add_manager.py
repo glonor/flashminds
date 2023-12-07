@@ -47,7 +47,7 @@ async def study_add_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [KeyboardButton("Generate from image ✨")]
         ]
 
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
         await update.message.reply_text("How would you like to create a flashcard?", reply_markup=reply_markup)
 
     elif create_deck_res.status_code == 409:  #deck already exists
@@ -210,7 +210,7 @@ async def study_set_card_from_image(update: Update, context: ContextTypes.DEFAUL
                     f"👏 Fantastic! Your flashcard has been created:\n\n"
                     f"- Question:\n{generated_question}\n\n"
                     f"- Answer:\n {generated_answer}\n\n"
-                    "Feel free to ask for another flashcard or press OK to complete the magic! ✨🔮"
+                    "Feel free to regenerate the flashcard or press OK to complete the magic! ✨🔮"
             )
             await update.message.reply_text(text=msg, reply_markup=reply_markup)
 
@@ -285,7 +285,7 @@ async def study_regenerate_card_from_image(update: Update, context: ContextTypes
                     f"♻️ Regenerated! Your flashcard has been created:\n\n"
                     f"- Question:\n{generated_question}\n\n"
                     f"- Answer:\n {generated_answer}\n\n"
-                    "Feel free to ask for another flashcard or press OK to complete the magic! ✨🔮"
+                    "Feel free to regenerate the flashcard or press OK to complete the magic! ✨🔮"
             )
 
             keyboard = [
