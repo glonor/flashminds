@@ -2,12 +2,13 @@
   <h1 align="center">FlashMindsBot</h2>
 
 <p align="center">
-  <img src="./assets/logo.png" width="250px" height="250px">
+      <img src="./assets/logo.png" width="250px" height="250px">
 </p>
+
 
 🚀 FlashMinds revolutionizes the way you learn by combining the simplicity of flashcards with the power of artificial intelligence. In addition to traditional flashcard functionality, FlashMinds employs advanced AI algorithms to enhance your learning experience.
 
-[gif]
+
 
 ## Table of contents
 - [Table of contents](#table-of-contents)
@@ -37,6 +38,10 @@ Keep tabs on your learning journey. FlashMinds provides insights into your progr
 
 - 📱 **Cross-Platform Accessibility** <br> 
 Access your study materials anytime, anywhere with the convenience of Telegram. FlashMinds is accessible through any Telegram app, whether on mobile or desktop. Seamlessly pick up where you left off and continue your learning journey effortlessly.
+
+<p align="center">
+  <img src="https://github.com/glonor/flashminds/blob/main/assets/flashminds_demo.gif" height="500px">
+</p>
 
 
 ## Documentation
