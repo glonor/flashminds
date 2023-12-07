@@ -28,7 +28,7 @@ PRINT = range(1) #state - conversation_handler_decks
 REMOVE = range(1) #state - conversation_handler_remove
 
 #Load environment variables from the .env file
-TELEGRAM_API_TOKEN = os.environ.get('TELEGRAM_API_TOKEN')
+TELEGRAM_API_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 
 
 #Logging

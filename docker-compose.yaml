@@ -50,24 +50,24 @@ services:
       - ./flashcard_service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data:/var/lib/mysql
 
-  # telegram_bot:
-  #   build: ./telegram_bot
-  #   depends_on:
-  #     - scheduler_service
-  #     - chatgpt_service
-  #     - ocr_service
-  #     - flashcard_service
-  #   environment:
-  #     - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-  #     - CHATGPT_URL=http://chatgpt_service:5002
-  #     - OCR_URL=http://ocr_service:5003
-  #     - SCHEDULER_URL=http://scheduler_service:5001
-  #     - DL_URL=http://flashcard_service:5000
-  #   links:
-  #     - scheduler_service
-  #     - chatgpt_service
-  #     - ocr_service
-  #     - flashcard_service
-  #   env_file:
-  #   - .env
+  telegram_bot:
+    build: ./telegram_bot
+    depends_on:
+      - scheduler_service
+      - chatgpt_service
+      - ocr_service
+      - flashcard_service
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - CHATGPT_URL=http://chatgpt_service:5002
+      - OCR_URL=http://ocr_service:5003
+      - SCHEDULER_URL=http://scheduler_service:5001
+      - DL_URL=http://flashcard_service:5000
+    links:
+      - scheduler_service
+      - chatgpt_service
+      - ocr_service
+      - flashcard_service
+    env_file:
+    - .env
 
