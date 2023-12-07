@@ -2,8 +2,7 @@ import textwrap
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 import requests
-from os import environ
-
+import os
 
 #URL for the database
 BL_API_BASE_URL = os.environ.get('DL_URL')
@@ -30,17 +29,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_msg = (
             f"🚀 Welcome to FlashMindsBot! 🧠\n\n"
             "Struggling with study sessions? Our bot is here to revolutionize your learning experience! "
-            "Thanks to the power of Machine Learning and our innovative flashcard system, we generate flashcards "
-            "from images and questions/answers provided by you.\n\n"
+            "We generate flashcards thanks to the power of AI\n\n"
             "✨ How it works:\n"
-            "1️⃣ Upload images or input your Q&A.\n"
-            "2️⃣ ML generates personalized flashcards.\n"
-            "3️⃣ Questions are paraphrased in each session.\n"
+            "1️⃣ Generate your deck using images or written Q&A\n"
+            "2️⃣ Start a study session.\n"
+            "3️⃣ Cards are rephrased in each iteration\n"
             "4️⃣ Evaluate your answers during the session.\n\n"
-            "🔄 Smart Revision:\n"
+            "🔄 Smart Scheduling:\n"
             "Our algorithm identifies areas that need review and prioritizes them in subsequent sessions. "
             "Effortless learning tailored to your needs!\n\n"
-            "📚 Unleash the potential of FlashMindsBot for a smarter study journey. Try it now and boost your academic success! 🌟\n\n"
+            "📚 Try it now and boost your academic success! 🌟\n\n"
         )        
 
     elif create_user_res.status_code == 409: #user already exist

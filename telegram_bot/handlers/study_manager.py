@@ -75,6 +75,8 @@ async def study_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if selected_deck: #deck present in array
         context.user_data['study_deck_id'] = selected_deck['id']
+        print(user.id)
+        print(context.user_data['study_deck_id'])
         keyboard = [
             [KeyboardButton("Yes, use AI")], 
             [KeyboardButton("No, use my cards")]
@@ -99,10 +101,12 @@ async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYP
 
     #save user decision
     if option == "Yes, use AI": 
-        context.user_data['study_gen_opt'] = True
+        context.user_data['study_gen_opt'] = 1
+        print(context.user_data['study_gen_opt'])
+
 
     elif option == "No, use my cards":
-        context.user_data['study_gen_opt'] = False
+        context.user_data['study_gen_opt'] = 0
 
     else: #option not valid, repeat
         keyboard = [
@@ -144,6 +148,7 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
             if start_session_res.status_code == 201: #session created
                 response_data = start_session_res.json()
                 session_id = response_data.get('session_id', None)
+                print(f"Study session id: {session_id}")
                 context.user_data['study_session_id'] = session_id 
             
             else: #error
@@ -195,7 +200,7 @@ async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ] #reply rating keyboard
 
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
-        await update.message.reply_text(f"Answer:\n{context.user_data['study_card_answer']}\n\n How do you rate your answer?⭐️:", reply_markup=reply_markup)
+        await update.message.reply_text(f"Answer:\n{context.user_data['study_card_answer']}\n\nHow do you rate your answer?⭐️:", reply_markup=reply_markup)
 
     elif (text == "STOP"):
         msg = await stop_session(Update, context, user)
@@ -282,6 +287,11 @@ async def generate_flashcard(update: Update, context: ContextTypes.DEFAULT_TYPE,
             "chatgpt": context.user_data['study_gen_opt'] #boolean
         }
     )   
+    print(user.id)
+    print(context.user_data['study_deck_id'])
+    print(context.user_data['study_session_id'])
+    print(context.user_data['study_gen_opt'])
+
    
     if next_flashcard_res.status_code == 200:  #flashcard ok
         response_data = next_flashcard_res.json()

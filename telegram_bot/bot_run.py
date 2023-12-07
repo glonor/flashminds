@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
     
 def main():
     #Retrieve the API token from the environment variable
-    TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
     if TELEGRAM_API_TOKEN is None:
         raise Exception("No API token found. Please check your .env file.")
 

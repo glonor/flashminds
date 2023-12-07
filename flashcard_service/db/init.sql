@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS decks (
 CREATE TABLE IF NOT EXISTS flashcards (
     card_id INT AUTO_INCREMENT PRIMARY KEY,
     deck_id INT,
-    question VARCHAR(255) NOT NULL,
-    answer VARCHAR(255) NOT NULL,
+    question VARCHAR(1000) NOT NULL,
+    answer VARCHAR(1000) NOT NULL,
     last_reviewed TIMESTAMP,
     ebisu_model TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    
