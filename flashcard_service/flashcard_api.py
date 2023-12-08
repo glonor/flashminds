@@ -292,7 +292,7 @@ def get_decks(user_id):
 
         # Retrieve decks and the count of flashcards and the last average confidence of the last study session for each deck for the specified user
         query = """
-           SELECT
+            SELECT
                 d.deck_id,
                 d.deck_name,
                 COUNT(f.card_id) AS flashcard_count,
@@ -302,10 +302,18 @@ def get_decks(user_id):
             LEFT JOIN (
                 SELECT
                     s.deck_id,
-                    s.average_confidence,
-                    MAX(s.end_time) AS last_session_end_time
-                FROM study_sessions s
-                GROUP BY s.deck_id, s.average_confidence
+                    ss.average_confidence,
+                    s.last_session_end_time
+                FROM (
+                    SELECT
+                        deck_id,
+                        MAX(end_time) AS last_session_end_time
+                    FROM
+                        study_sessions
+                    GROUP BY
+                        deck_id
+                ) s
+                JOIN study_sessions ss ON s.deck_id = ss.deck_id AND s.last_session_end_time = ss.end_time
             ) ss ON d.deck_id = ss.deck_id
             WHERE d.user_id = %s
             GROUP BY d.deck_id, d.deck_name
