@@ -17,8 +17,8 @@
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [Contributors](#contributors)
+- [Acknowledgments](acknowledgments)
 
 ## Introduction
 
