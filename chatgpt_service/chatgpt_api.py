@@ -18,7 +18,6 @@ def paraphrase():
         # Extract the input flashcard from the request
         input_flashcard = request.json.get('flashcard')
 
-
         for attempt in range(MAX_RETRIES):
             try:
                 # Use OpenAI function to generate paraphrased flashcard
