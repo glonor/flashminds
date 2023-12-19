@@ -38,7 +38,7 @@ async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             deck_array = []  #Initialize an array to store decks
             keyboard = []  #Initialize reply keyboard
-
+            
             for deck in decks:
                 deck_id = deck.get('deck_id')
                 deck_name = deck.get('deck_name')
@@ -51,7 +51,6 @@ async def study(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     deck_array.append({'id': deck_id, 'name': deck_name})
 
             context.user_data['deck_array'] = deck_array
-
             reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
             await update.message.reply_text("📚 I'm ready. Tell me which deck you want to use for the study session.", reply_markup=reply_markup)
 
@@ -75,8 +74,6 @@ async def study_deck_selection(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if selected_deck: #deck present in array
         context.user_data['study_deck_id'] = selected_deck['id']
-        print(user.id)
-        print(context.user_data['study_deck_id'])
         keyboard = [
             [KeyboardButton("Yes, use AI")], 
             [KeyboardButton("No, use my cards")]
@@ -102,8 +99,6 @@ async def study_session_option(update: Update, context: ContextTypes.DEFAULT_TYP
     #save user decision
     if option == "Yes, use AI": 
         context.user_data['study_gen_opt'] = 1
-        print(context.user_data['study_gen_opt'])
-
 
     elif option == "No, use my cards":
         context.user_data['study_gen_opt'] = 0
@@ -148,7 +143,6 @@ async def study_session_start(update: Update, context: ContextTypes.DEFAULT_TYPE
             if start_session_res.status_code == 201: #session created
                 response_data = start_session_res.json()
                 session_id = response_data.get('session_id', None)
-                print(f"Study session id: {session_id}")
                 context.user_data['study_session_id'] = session_id 
             
             else: #error
@@ -224,7 +218,6 @@ async def study_session_card(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def study_rating_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user #telegram user
     text = update.message.text #input user
-
     #function to check that stars are between 1 and 5
     def is_valid_rating(star_count):
         return 1 <= star_count <= 5
@@ -287,12 +280,7 @@ async def generate_flashcard(update: Update, context: ContextTypes.DEFAULT_TYPE,
             "chatgpt": context.user_data['study_gen_opt'] #boolean
         }
     )   
-    print(user.id)
-    print(context.user_data['study_deck_id'])
-    print(context.user_data['study_session_id'])
-    print(context.user_data['study_gen_opt'])
 
-   
     if next_flashcard_res.status_code == 200:  #flashcard ok
         response_data = next_flashcard_res.json()
         #card_id

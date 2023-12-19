@@ -69,7 +69,7 @@ def review_flashcard():
                 prior_model =  flashcard['ebisu_model']
                 last_reviewed = flashcard['last_reviewed']
                 # Get the elapsed time since the last review in hours
-                elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 3600)
+                elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 60)
                 confidence_score = (confidence - 1) / 4.0
                 decoded_data = json.loads(prior_model)
                 prior_model = [ebisu.Atom.from_dict(atom_data) for atom_data in decoded_data]
@@ -136,7 +136,10 @@ def get_recall_probability(flashcard):
         f_model = json.loads(flashcard['ebisu_model'])
         f_model = [ebisu.Atom.from_dict(atom_data) for atom_data in f_model]
         last_reviewed = flashcard['last_reviewed']
-        elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 3600)
+        elapsed_time = int((datetime.now() - datetime.strptime(last_reviewed, '%a, %d %b %Y %H:%M:%S %Z')).total_seconds() / 60)
+        if elapsed_time == 0:
+            elapsed_time = 1
+
         return ebisu.predictRecall(f_model, elapsed_time)
 
 
@@ -148,7 +151,7 @@ def get_next_flashcard():
         deck_id = data.get('deck_id')
         user_id = data.get('user_id')
         chatgpt = data.get('chatgpt')
-
+    
         if session_id is None or deck_id is None or user_id is None:
             return jsonify({'message': 'Missing required fields'}), 400
 
@@ -170,8 +173,9 @@ def get_next_flashcard():
 
         # Get the recall probability for each flashcard
         for flashcard in flashcards:
-            flashcard['recall_probability'] = get_recall_probability(flashcard)
-
+            temp = get_recall_probability(flashcard)
+            flashcard['recall_probability'] = temp
+            
         # Sort the flashcards by recall_probability
         flashcards = sorted(flashcards, key=lambda x: x['recall_probability'])
 
@@ -184,8 +188,9 @@ def get_next_flashcard():
         if chatgpt == 1:
             # Generate paraphrased flashcard
             paraphrase_url = f'{CHATGPT_URL}/paraphrase'
+            flashcard = json.dumps(flashcard)
             paraphrase_payload = {
-                'flashcard': "{flashcard}"
+                'flashcard': flashcard
             }
             paraphrase_response = requests.post(paraphrase_url, json=paraphrase_payload)
 
@@ -202,7 +207,7 @@ def get_next_flashcard():
         #     'card_id': flashcards[0]['card_id']
         # }), 200
 
-        # For debugging purposes    
+        # For debugging purposes
         return jsonify(flashcards[0]), 200
 
     except Exception as e:
