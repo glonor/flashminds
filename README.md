@@ -91,34 +91,14 @@ This command will build the Docker images and start the containers based on the 
 4. Access your Telegram Bot.
 Once the containers are running, you can access your FlashMindsBot via Telegram.
 
-
-## Contributing
-If you'd like to contribute to FlashMindsBot, please follow these guidelines:
-
-1. Fork the repository to your GitHub account.
-2. Clone the forked repository to your local machine.
-
-```bash
-git clone https://github.com/your-username/repository.git
-```
-3. Create a new branch for your contribution.
-```bash
-git checkout -b feature/your-feature
-```
-4. Create a new branch for your contribution.
-```bash
-git checkout -b feature/your-feature
-```
-5. Make your changes in the new branch. Ensure that your code follows the project's coding standards.
-6. Test your changes thoroughly to make sure they work as expected.
-7. Commit and push your changes.
-```bash
-git commit -m "Add your meaningful commit message"
-git push origin feature/your-feature
-```
-8. Open a pull request on the original repository. Provide a clear and concise description of your changes.
-
 ## Contributors
 
 ![GitHub contributors](https://img.shields.io/github/contributors/glonor/flashminds?style=for-the-badge)
 
+## Acknowledgments
+
+- [Ebisu](https://github.com/fasiha/ebisu/tree/v3-release-candidate): Utilized Ebisu for smart scheduling service.
+
+- [ChatGPT](https://www.openai.com/gpt): Powered by OpenAI's GPT-3.5 language model.
+
+- [Tesseract](https://github.com/tesseract-ocr/tesseract): Used Tesseract for OCR service.
