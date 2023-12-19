@@ -18,7 +18,7 @@
   - [Prerequisites](#prerequisites)
 - [Usage](#usage)
 - [Contributors](#contributors)
-- [Acknowledgments](acknowledgments)
+- [Acknowledgments](#acknowledgments)
 
 ## Introduction
 
