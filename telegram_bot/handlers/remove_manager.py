@@ -50,7 +50,7 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['deck_array'] = deck_array
 
             reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard= True)
-            await update.message.reply_text("🗑️ Choose the deck you want to remove", reply_markup=reply_markup)
+            await update.message.reply_text("🗑️ Choose the deck you want to remove\n\n /cancel", reply_markup=reply_markup)
 
     else:  #error
         reply_markup = await show_keyboard(update, context)
@@ -96,7 +96,6 @@ async def remove_deck_selection(update: Update, context: ContextTypes.DEFAULT_TY
 # ---------------------------------------------------------------- #
 # ---------------------  REPLY KEYBOARD MENU  -------------------- #
 # ---------------------------------------------------------------- #
-
 async def show_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [KeyboardButton("✨ Start a session ✨")],

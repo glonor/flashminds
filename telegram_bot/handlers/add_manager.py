@@ -311,7 +311,7 @@ async def study_regenerate_card_from_image(update: Update, context: ContextTypes
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     
-    msg="🛑 You cancelled the deck creation."
+    msg="🛑 You stopped the operation."
     context.user_data.clear()
     reply_markup = await show_keyboard(update, context)
     await update.message.reply_text(msg, reply_markup=reply_markup)

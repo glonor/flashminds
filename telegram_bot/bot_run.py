@@ -99,7 +99,7 @@ def main():
             MessageHandler(filters.Regex("^(🗑️ Remove)$"), remove)
         ],
         states={
-            REMOVE: [MessageHandler(filters.TEXT, remove_deck_selection)],
+            REMOVE: [MessageHandler(filters.TEXT & ~filters.COMMAND, remove_deck_selection)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
