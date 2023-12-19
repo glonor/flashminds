@@ -181,7 +181,7 @@ def get_next_flashcard():
             'answer': flashcards[0]['answer']
         }
 
-        if chatgpt:
+        if chatgpt == 1:
             # Generate paraphrased flashcard
             paraphrase_url = f'{CHATGPT_URL}/paraphrase'
             paraphrase_payload = {

@@ -39,6 +39,8 @@ async def decks(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = []  #Initialize reply keyboard
 
             for deck in decks:
+                flashcard_count=0
+                last_average_confidence=0
                 deck_id = deck.get('deck_id')
                 deck_name = deck.get('deck_name')
                 flashcard_count = deck.get('flashcard_count')
