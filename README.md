@@ -102,3 +102,7 @@ Once the containers are running, you can access your FlashMindsBot via Telegram.
 - [ChatGPT](https://www.openai.com/gpt): Powered by OpenAI's GPT-3.5 language model.
 
 - [Tesseract](https://github.com/tesseract-ocr/tesseract): Used Tesseract for OCR service.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
